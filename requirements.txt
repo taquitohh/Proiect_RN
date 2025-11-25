@@ -1,0 +1,37 @@
+# Dependențe Python pentru proiect Rețele Neuronale
+# =================================================
+
+# Framework-uri Deep Learning
+torch>=2.0.0
+torchvision>=0.15.0
+
+# Calcul științific și manipulare date
+numpy>=1.24.0
+pandas>=2.0.0
+scipy>=1.10.0
+
+# Vizualizare
+matplotlib>=3.7.0
+seaborn>=0.12.0
+plotly>=5.14.0
+
+# Preprocesare și Machine Learning
+scikit-learn>=1.2.0
+
+# Utilitare
+pyyaml>=6.0
+tqdm>=4.65.0
+joblib>=1.2.0
+
+# API Backend
+fastapi>=0.100.0
+uvicorn>=0.22.0
+python-multipart>=0.0.6
+pydantic>=2.0.0
+
+# CORS pentru React
+starlette>=0.27.0
+
+# Jupyter pentru experimentare
+jupyter>=1.0.0
+ipykernel>=6.22.0
