@@ -52,7 +52,7 @@ app.add_middleware(
 )
 
 # Stare globală
-app_state = {
+app_state: Dict[str, Any] = {
     "data": None,
     "preprocessor": None,
     "model": None,

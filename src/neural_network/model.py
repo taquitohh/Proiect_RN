@@ -303,7 +303,7 @@ class NeuralNetworkTrainer:
         
         return avg_val_loss, val_acc
     
-    def evaluate(self, X_test: np.ndarray, y_test: np.ndarray) -> Dict[str, float]:
+    def evaluate(self, X_test: np.ndarray, y_test: np.ndarray) -> Dict[str, Any]:
         """
         Evaluează modelul pe setul de test.
         

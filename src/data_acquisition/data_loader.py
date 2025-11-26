@@ -11,8 +11,9 @@ Acest modul conține funcții pentru:
 import os
 import numpy as np
 import pandas as pd
-from typing import Optional, Tuple, Dict, Any
+from typing import Optional, Tuple, Dict, Any, List
 import yaml
+import json
 
 
 def load_config(config_path: str = "../../config/preprocessing_config.yaml") -> Dict[str, Any]:
@@ -20,6 +21,22 @@ def load_config(config_path: str = "../../config/preprocessing_config.yaml") -> 
     with open(config_path, 'r', encoding='utf-8') as f:
         return yaml.safe_load(f)
 
+
+def load_training_data(file_path: str) -> List[Dict[str, Any]]:
+    """
+    Încarcă datele de antrenament din JSON sau CSV.
+    Format așteptat: [{"text": "...", "intent": "..."}]
+    """
+    if file_path.endswith('.json'):
+        with open(file_path, 'r', encoding='utf-8') as f:
+            data: List[Dict[str, Any]] = json.load(f)
+        return data
+    elif file_path.endswith('.csv'):
+        df = pd.read_csv(file_path)
+        records: List[Dict[str, Any]] = df.to_dict(orient='records')  # type: ignore
+        return records
+    else:
+        raise ValueError("Format fișier neacceptat. Folosiți .json sau .csv")
 
 def load_csv_data(file_path: str, **kwargs) -> pd.DataFrame:
     """

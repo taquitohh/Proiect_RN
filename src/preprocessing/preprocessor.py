@@ -9,9 +9,11 @@ Acest modul conține funcții pentru:
 """
 
 import os
+import re
 import numpy as np
 import pandas as pd
 from typing import Optional, Tuple, Dict, Any, List, Union
+from collections import Counter
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler, StandardScaler, LabelEncoder, OneHotEncoder
 import yaml
@@ -430,6 +432,81 @@ class DataPreprocessor:
         self.config = state['config']
         self.fitted = state['fitted']
         print(f"Preprocessor încărcat din: {path}")
+
+
+class TextPreprocessor:
+    """Clasă pentru preprocesarea textului."""
+    
+    def __init__(self, max_vocab_size: int = 1000):
+        """
+        Inițializare text preprocessor.
+        
+        Args:
+            max_vocab_size: Dimensiunea maximă a vocabularului
+        """
+        self.vocab: Dict[str, int] = {}
+        self.max_vocab_size = max_vocab_size
+        self.intent_map: Dict[str, int] = {}
+        self.reverse_intent_map: Dict[int, str] = {}
+
+    def fit(self, data: List[Dict[str, Any]]):
+        """Construiește vocabularul din textele de antrenament."""
+        # 1. Construire vocabular text
+        all_words = []
+        intents = set()
+        
+        for item in data:
+            text = item['text'].lower()
+            words = re.findall(r'\w+', text)
+            all_words.extend(words)
+            intents.add(item['intent'])
+            
+        # Păstrăm cele mai frecvente cuvinte
+        word_counts = Counter(all_words)
+        common_words = word_counts.most_common(self.max_vocab_size)
+        
+        self.vocab = {word: idx for idx, (word, _) in enumerate(common_words)}
+        
+        # 2. Mapare intentii (clase)
+        self.intent_map = {intent: idx for idx, intent in enumerate(sorted(intents))}
+        self.reverse_intent_map = {idx: intent for intent, idx in self.intent_map.items()}
+
+    def transform(self, data: List[Dict[str, Any]]) -> Tuple[np.ndarray, np.ndarray]:
+        """Transformă textul în vectori (Bag of Words) și intentiile în indici."""
+        X = []
+        y = []
+        
+        vocab_size = len(self.vocab)
+        
+        for item in data:
+            # Vectorizare text
+            text = item['text'].lower()
+            words = re.findall(r'\w+', text)
+            vector = np.zeros(vocab_size, dtype=np.float32)
+            
+            for word in words:
+                if word in self.vocab:
+                    vector[self.vocab[word]] = 1.0
+            
+            X.append(vector)
+            
+            # Vectorizare intent (dacă există)
+            if 'intent' in item:
+                y.append(self.intent_map.get(item['intent'], 0))
+                
+        return np.array(X), np.array(y)
+
+    def transform_text(self, text: str) -> np.ndarray:
+        """Transformă un singur text pentru predicție."""
+        text = text.lower()
+        words = re.findall(r'\w+', text)
+        vector = np.zeros(len(self.vocab), dtype=np.float32)
+        
+        for word in words:
+            if word in self.vocab:
+                vector[self.vocab[word]] = 1.0
+                
+        return vector.reshape(1, -1)
 
 
 def save_splits_to_files(
