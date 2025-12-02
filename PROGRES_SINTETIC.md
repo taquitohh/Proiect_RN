@@ -5,7 +5,7 @@
 # 📌 ETAPA 1: Infrastructură Inițială (Arhitectură Client-Server)
 
 ## 1. Rezumat Executiv
-Proiectul a fost inițializat și dezvoltat complet la nivel de cod sursă, urmând o arhitectură modernă Client-Server. Sistemul integrează un backend robust bazat pe Python (FastAPI & PyTorch) cu un frontend reactiv (React & Tailwind CSS).
+Proiectul a fost inițializat și dezvoltat complet la nivel de cod sursă, urmând o arhitectură modernă Client-Server. Sistemul integrează un backend robust bazat pe Python (Flask & PyTorch) cu un frontend reactiv (React & Tailwind CSS).
 
 ## 2. Realizări Tehnice
 
@@ -14,12 +14,12 @@ Proiectul a fost inițializat și dezvoltat complet la nivel de cod sursă, urm�
 - [x] **Configurare Mediu:**
   - Python 3.12.10 instalat și configurat.
   - Node.js 24.11.1 instalat.
-  - Mediu virtual (`venv`) creat și activat.
-  - Dependențe Python instalate (`torch`, `fastapi`, `pandas`, etc.).
+  - Mediu virtual (`.venv`) creat și activat.
+  - Dependențe Python instalate (`torch`, `flask`, `pandas`, etc.).
   - Dependențe Node.js instalate.
 
 ### B. Backend (Python & AI)
-- [x] **API Server:** Implementat cu **FastAPI** (`src/api.py`) pentru a expune endpoint-uri de antrenament și predicție.
+- [x] **API Server:** Implementat cu **Flask** (`src/api.py`) pentru a expune endpoint-uri de antrenament și predicție.
 - [x] **Model AI:** Arhitectură de rețea neuronală definită în **PyTorch** (`src/neural_network/model.py`).
 - [x] **Pipeline de Date:**
   - Modul de achiziție date (`src/data_acquisition/data_loader.py`).
@@ -52,10 +52,10 @@ Inițial, proiectul a fost conceput ca un sistem generic de clasificare pe date 
 
 ### Ce am păstrat din Etapa 1:
 - ✅ Structura de foldere (`src`, `frontend`, `data`, `config`)
-- ✅ FastAPI ca backend server
+- ✅ Flask ca backend server (migrat de la FastAPI)
 - ✅ React + Vite + Tailwind ca frontend
 - ✅ PyTorch pentru rețeaua neuronală
-- ✅ Mediul virtual și configurările VS Code
+- ✅ Mediul virtual (`.venv`) și configurările VS Code
 
 ### Ce am modificat/adăugat:
 - 🔄 **Input:** CSV tabular → Text în limbaj natural
@@ -181,7 +181,7 @@ Proiect_RN/
 ├── models/                     # Checkpoint-uri model salvate
 ├── src/
 │   ├── __init__.py
-│   ├── api.py                  # FastAPI server
+│   ├── api.py                  # Flask server
 │   ├── bpy.py                  # Mock Blender API (NOU)
 │   ├── data_acquisition/
 │   │   └── data_loader.py      # Încărcare JSON/CSV
@@ -191,7 +191,7 @@ Proiect_RN/
 │   │   └── model.py            # Rețea neuronală PyTorch
 │   └── preprocessing/
 │       └── preprocessor.py     # TextPreprocessor (NOU)
-├── venv/                       # Mediu virtual Python
+├── .venv/                      # Mediu virtual Python
 ├── .vscode/
 │   └── settings.json           # Configurare interpretor
 ├── requirements.txt
@@ -201,7 +201,36 @@ Proiect_RN/
 
 ---
 
-## 9. Pași Următori
+## 9. Actualizări Recente (Decembrie 2025)
+
+### Migrare de la FastAPI la Flask
+- [x] **Backend migrat:** API-ul a fost convertit de la FastAPI la Flask pentru simplitate
+- [x] **CORS configurat:** Flask-CORS instalat pentru comunicare cu frontend-ul React
+- [x] **Endpoints actualizate:** Toate rutele folosesc acum `@app.route()` în loc de `@app.get/post()`
+- [x] **Răspunsuri JSON:** Folosim `jsonify()` pentru toate răspunsurile
+
+### Actualizare Dependențe
+- [x] **Versiuni recente:** Toate pachetele actualizate la ultimele versiuni stabile
+- [x] **PyTorch 2.9.1** - Framework pentru rețeaua neuronală
+- [x] **Flask 3.1.2** - Server web backend
+- [x] **NumPy 2.3.5, Pandas 2.3.3** - Procesare date
+- [x] **Scikit-learn 1.7.2** - Preprocesare și metrici
+
+### Dependențe Principale (`requirements.txt`)
+```
+torch>=2.5.1
+numpy>=2.1.3
+pandas>=2.2.3
+flask>=3.1.0
+flask-cors>=5.0.0
+scikit-learn>=1.5.2
+matplotlib>=3.9.2
+pyyaml>=6.0.2
+```
+
+---
+
+## 10. Pași Următori
 
 - [ ] Actualizare model neuronal pentru clasificare intenții NLP
 - [ ] Implementare endpoint `/api/predict` pentru text-to-script
@@ -212,7 +241,7 @@ Proiect_RN/
 
 ---
 
-## 10. Resurse și Referințe
+## 11. Resurse și Referințe
 - NVIDIA GET3D - A Generative Model of 3D Objects
 - OpenAI GPT-4 Technical Report - Multimodal AI for code generation
 - Google DreamFusion: Text-to-3D
