@@ -1,9 +1,4 @@
 # Date și fișiere generate
-data/raw/*
-data/processed/*
-data/train/*
-data/validation/*
-data/test/*
 !data/*/.gitkeep
 !data/README.md
 

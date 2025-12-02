@@ -1,0 +1,38 @@
+[
+    {
+        "text": "creeaza un cub",
+        "intent": "create_cube",
+        "parameters": {},
+        "script_template": "bpy.ops.mesh.primitive_cube_add(size={size}, location=({x}, {y}, {z}))"
+    },
+    {
+        "text": "fa un cub mare",
+        "intent": "create_cube",
+        "parameters": {"size": 4},
+        "script_template": "bpy.ops.mesh.primitive_cube_add(size={size}, location=({x}, {y}, {z}))"
+    },
+    {
+        "text": "genereaza un cilindru",
+        "intent": "create_cylinder",
+        "parameters": {},
+        "script_template": "bpy.ops.mesh.primitive_cylinder_add(radius={radius}, depth={depth}, location=({x}, {y}, {z}))"
+    },
+    {
+        "text": "vreau o sfera la pozitia 2 2 0",
+        "intent": "create_sphere",
+        "parameters": {"x": 2, "y": 2, "z": 0},
+        "script_template": "bpy.ops.mesh.primitive_uv_sphere_add(radius={radius}, location=({x}, {y}, {z}))"
+    },
+    {
+        "text": "adauga un con inalt",
+        "intent": "create_cone",
+        "parameters": {"depth": 5},
+        "script_template": "bpy.ops.mesh.primitive_cone_add(radius1={radius}, depth={depth}, location=({x}, {y}, {z}))"
+    },
+    {
+        "text": "sterge tot",
+        "intent": "delete_all",
+        "parameters": {},
+        "script_template": "bpy.ops.object.select_all(action='SELECT')\nbpy.ops.object.delete()"
+    }
+]
