@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const API_BASE_URL = 'http://localhost:8000';
 
-const api = axios.create({
+const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
@@ -89,43 +89,59 @@ export interface PredictResponse {
 // API Functions
 export const apiService = {
   // Status
-  getStatus: () => api.get<StatusResponse>('/api/status'),
+  getStatus: () => axiosInstance.get<StatusResponse>('/api/status'),
 
   // Data
   uploadData: (file: File) => {
     const formData = new FormData();
     formData.append('file', file);
-    return api.post<{ message: string; info: DataInfo }>('/api/data/upload', formData, {
+    return axiosInstance.post<{ message: string; info: DataInfo }>('/api/data/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
 
   generateData: (params: SyntheticDataRequest) =>
-    api.post<{ message: string; info: DataInfo }>('/api/data/generate', params),
+    axiosInstance.post<{ message: string; info: DataInfo }>('/api/data/generate', params),
 
-  getDataInfo: () => api.get<DataInfo>('/api/data/info'),
+  getDataInfo: () => axiosInstance.get<DataInfo>('/api/data/info'),
 
-  getStatistics: () => api.get('/api/data/statistics'),
+  getStatistics: () => axiosInstance.get('/api/data/statistics'),
 
   // Preprocessing
   preprocess: (params: PreprocessRequest) =>
-    api.post<PreprocessResponse>('/api/preprocess', params),
+    axiosInstance.post<PreprocessResponse>('/api/preprocess', params),
 
-  getAnalysis: () => api.get('/api/preprocess/analysis'),
+  getAnalysis: () => axiosInstance.get('/api/preprocess/analysis'),
 
   // Training
-  train: (params: TrainRequest) => api.post<TrainResponse>('/api/train', params),
+  train: (params: TrainRequest) => axiosInstance.post<TrainResponse>('/api/train', params),
 
   getTrainingHistory: () =>
-    api.get<{ train_loss: number[]; val_loss: number[]; train_acc: number[]; val_acc: number[] }>(
+    axiosInstance.get<{ train_loss: number[]; val_loss: number[]; train_acc: number[]; val_acc: number[] }>(
       '/api/train/history'
     ),
 
   evaluate: () =>
-    api.get<{ test_loss: number; accuracy: number; n_samples: number }>('/api/train/evaluate'),
+    axiosInstance.get<{ test_loss: number; accuracy: number; n_samples: number }>('/api/train/evaluate'),
 
   // Prediction
-  predict: (params: PredictRequest) => api.post<PredictResponse>('/api/predict', params),
+  predict: (params: PredictRequest) => axiosInstance.post<PredictResponse>('/api/predict', params),
+
+  // Blender Text-to-Code
+  generateBlenderCode: (text: string) => 
+    axiosInstance.post<{
+      success: boolean;
+      intent: string;
+      params: Record<string, number>;
+      interpretation: string;
+      code: string;
+    }>('/api/blender/generate', { text }),
+
+  getBlenderIntents: () => 
+    axiosInstance.get<{
+      intents: string[];
+      keywords: Record<string, string[]>;
+    }>('/api/blender/intents'),
 };
 
-export default api;
+export default apiService;

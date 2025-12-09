@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { Header } from './components/Layout/Header';
 import { Sidebar } from './components/Layout/Sidebar';
 import { ChatContainer, ChatInput, Message } from './components/Chat';
+import api from './api';
 
 interface Conversation {
   id: string;
@@ -164,63 +165,50 @@ function App() {
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
 
-    // Simulăm procesarea AI (în producție, aici ar fi call-ul API)
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    // Detectăm intenția (simplu, pentru demo)
-    let intent = 'create_cube';
     let interpretation = '';
     let params: Record<string, unknown> = {};
+    let code = '';
+    let intent = '';
 
-    const lowerContent = content.toLowerCase();
-    
-    if (lowerContent.includes('sfer')) {
-      intent = 'create_sphere';
-      interpretation = 'Am înțeles că vrei să creezi o sferă.';
-      params = { radius: 1, x: 0, y: 0, z: 0 };
+    try {
+      // Apelăm API-ul backend pentru a genera codul
+      const response = await api.generateBlenderCode(content);
       
-      // Extrage raza dacă e menționată
-      const radiusMatch = content.match(/raz[aă]\s*(?:de\s*)?(\d+(?:\.\d+)?)/i);
-      if (radiusMatch) params.radius = parseFloat(radiusMatch[1]);
-      
-      // Detectează culoarea
-      if (lowerContent.includes('roș')) {
-        params.r = 0.8; params.g = 0.1; params.b = 0.1;
-        interpretation += ' Culoare: roșu.';
+      if (response.data.success) {
+        intent = response.data.intent;
+        interpretation = response.data.interpretation;
+        params = response.data.params;
+        code = response.data.code;
+      } else {
+        interpretation = 'Eroare la procesarea cererii.';
+        code = '# Eroare la generare cod';
       }
-    } else if (lowerContent.includes('cilindru')) {
-      intent = 'create_cylinder';
-      interpretation = 'Am înțeles că vrei să creezi un cilindru.';
-      params = { radius: 1, height: 2, x: 0, y: 0, z: 0 };
+    } catch (error) {
+      // Fallback la generare locală dacă backend-ul nu e disponibil
+      console.warn('Backend indisponibil, folosesc generare locală:', error);
       
-      const heightMatch = content.match(/[îi]n[ăa]l[țt]ime\s*(?:de\s*)?(\d+(?:\.\d+)?)/i);
-      if (heightMatch) params.height = parseFloat(heightMatch[1]);
-    } else if (lowerContent.includes('material') || lowerContent.includes('metal')) {
-      intent = 'apply_material';
-      interpretation = 'Am înțeles că vrei să aplici un material pe obiectul selectat.';
-      params = { material_name: 'Custom_Material', metallic: 0.9, roughness: 0.2, r: 0.8, g: 0.8, b: 0.8 };
+      const lowerContent = content.toLowerCase();
       
-      if (lowerContent.includes('metal')) {
-        params.material_name = 'Metal_Material';
-        params.metallic = 1.0;
-        interpretation = 'Am înțeles că vrei să aplici un material metalic.';
+      if (lowerContent.includes('sfer')) {
+        intent = 'create_sphere';
+        interpretation = 'Am înțeles că vrei să creezi o sferă. (offline mode)';
+        params = { radius: 1 };
+      } else if (lowerContent.includes('cilindru')) {
+        intent = 'create_cylinder';
+        interpretation = 'Am înțeles că vrei să creezi un cilindru. (offline mode)';
+        params = { radius: 1, depth: 2 };
+      } else if (lowerContent.includes('cub')) {
+        intent = 'create_cube';
+        interpretation = 'Am înțeles că vrei să creezi un cub. (offline mode)';
+        params = { size: 2 };
+      } else {
+        intent = 'create_cube';
+        interpretation = 'Generez un cub implicit. (offline mode)';
+        params = { size: 2 };
       }
-    } else if (lowerContent.includes('cub')) {
-      intent = 'create_cube';
-      interpretation = 'Am înțeles că vrei să creezi un cub.';
-      params = { size: 2, x: 0, y: 0, z: 0 };
       
-      const sizeMatch = content.match(/(\d+(?:\.\d+)?)\s*(?:m(?:etri)?|metri)/i);
-      if (sizeMatch) {
-        params.size = parseFloat(sizeMatch[1]);
-        interpretation += ` Dimensiune: ${params.size} metri.`;
-      }
-    } else {
-      interpretation = 'Am înțeles cererea ta. Generez un cub implicit.';
-      params = { size: 2, x: 0, y: 0, z: 0 };
+      code = generateExampleCode(intent, params);
     }
-
-    const code = generateExampleCode(intent, params);
 
     // Răspunsul AI
     const aiMessage: Message = {

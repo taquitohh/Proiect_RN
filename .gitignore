@@ -1,6 +1,27 @@
-# Date și fișiere generate
+# Date și fișiere generate (păstrăm doar structura)
+# Fișiere mari generate automat
+data/generated/*.json
+data/generated/*.csv
+data/processed/*.csv
+data/processed/*.json
+data/train/*.csv
+data/train/*.json
+data/validation/*.csv
+data/validation/*.json  
+data/test/*.csv
+data/test/*.json
+
+# Păstrăm .gitkeep pentru structură și README-uri
 !data/*/.gitkeep
+!data/*/README.md
 !data/README.md
+
+# Păstrăm scripturile Blender (sunt mici și originale)
+!data/raw/blender_scripts/
+
+# Păstrăm fișierele mici din raw (sub 100KB)
+!data/raw/blender_training_data.json
+!data/raw/blender_training_dataset.json
 
 # Python
 __pycache__/

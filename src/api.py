@@ -23,7 +23,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import yaml
 
-# Import module locale
+# Import module locale (lazy loading pentru torch)
 from data_acquisition.data_loader import (
     load_csv_data, 
     generate_synthetic_data, 
@@ -31,7 +31,19 @@ from data_acquisition.data_loader import (
     save_data
 )
 from preprocessing.preprocessor import DataPreprocessor, save_splits_to_files
-from neural_network.model import NeuralNetwork, NeuralNetworkTrainer
+
+# Neural network se importă lazy pentru a evita erori la startup
+NeuralNetwork = None
+NeuralNetworkTrainer = None
+
+def load_neural_network_module():
+    """Încarcă modulul neural network la cerere."""
+    global NeuralNetwork, NeuralNetworkTrainer
+    if NeuralNetwork is None:
+        from neural_network.model import NeuralNetwork as NN, NeuralNetworkTrainer as NNT
+        NeuralNetwork = NN
+        NeuralNetworkTrainer = NNT
+    return NeuralNetwork, NeuralNetworkTrainer
 
 # Inițializare aplicație
 app = Flask(__name__)
@@ -427,5 +439,87 @@ def get_preprocessing_config():
     return jsonify({})
 
 
+# ==================== Blender Text-to-Code ====================
+
+from generators.blender_generator import BlenderScriptGenerator
+
+# Inițializare generator Blender
+blender_generator = BlenderScriptGenerator()
+
+# Mapping simplu text → intenție (va fi înlocuit cu RN antrenat)
+INTENT_KEYWORDS = {
+    "create_cube": ["cub", "cube", "box", "cutie"],
+    "create_sphere": ["sfera", "sferă", "sphere", "bila", "bilă", "ball"],
+    "create_cylinder": ["cilindru", "cylinder", "tub"],
+    "create_cone": ["con", "cone", "piramida", "piramidă"],
+    "create_torus": ["torus", "inel", "ring", "gogoasa", "gogoașă"],
+    "delete_all": ["sterge", "șterge", "delete", "elimina", "elimină", "curata", "curăță"],
+    "apply_material": ["material", "culoare", "color", "textura", "textură"],
+}
+
+def classify_intent_simple(text: str) -> str:
+    """
+    Clasificare simplă bazată pe cuvinte cheie.
+    În producție, aceasta va fi înlocuită cu inferența RN.
+    """
+    text_lower = text.lower()
+    for intent, keywords in INTENT_KEYWORDS.items():
+        for keyword in keywords:
+            if keyword in text_lower:
+                return intent
+    return "create_cube"  # Default
+
+
+@app.route("/api/blender/generate", methods=["POST"])
+def generate_blender_code():
+    """
+    Endpoint principal pentru generarea de cod Blender din text.
+    
+    Pipeline:
+    1. Primește text de la utilizator
+    2. Clasifică intenția (RN sau rule-based)
+    3. Extrage parametrii din text
+    4. Generează script Python pentru Blender
+    """
+    try:
+        data = request.get_json()
+        if not data or "text" not in data:
+            return error_response("Lipsește câmpul 'text' din request")
+        
+        user_text = data["text"]
+        
+        # 1. Clasificare intenție
+        # TODO: Înlocuiește cu model.predict() după antrenare
+        intent = classify_intent_simple(user_text)
+        
+        # 2. Extragere parametri din text
+        params = blender_generator.extract_parameters_from_text(user_text)
+        
+        # 3. Generare script
+        script = blender_generator.generate_script(intent, params)
+        
+        # 4. Returnare răspuns
+        return jsonify({
+            "success": True,
+            "intent": intent,
+            "params": params,
+            "interpretation": f"Am înțeles că vrei să creezi: {intent.replace('_', ' ')}",
+            "code": script
+        })
+        
+    except Exception as e:
+        return error_response(f"Eroare la generare: {str(e)}")
+
+
+@app.route("/api/blender/intents")
+def get_blender_intents():
+    """Returnează lista de intenții disponibile."""
+    return jsonify({
+        "intents": list(INTENT_KEYWORDS.keys()),
+        "keywords": INTENT_KEYWORDS
+    })
+
+
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8000, debug=True)
+    print("Starting Flask server on http://localhost:8000")
+    app.run(host="0.0.0.0", port=8000, debug=False)
