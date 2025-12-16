@@ -135,39 +135,48 @@ de ce sunt relevante pentru problema voastră, cu ce parametri ați rulat simula
 
 ### ✅ Contribuția originală la setul de date (COMPLETAT):
 
-**Total observații finale:** 200+ perechi text-intenție + 40 scripturi Blender
-**Observații originale:** 200+ (100%)
+**Total observații finale:** 1,606 (1,560 samples generate + 46 scripturi Blender)
+**Observații originale:** 1,606 (100%)
 
 **Tipul contribuției:**
 - [ ] Date generate prin simulare fizică  
 - [ ] Date achiziționate cu senzori proprii  
 - [X] Etichetare/adnotare manuală  
-- [ ] Date sintetice prin metode avansate  
+- [X] Date sintetice prin metode avansate (generare automată cu variații)
 
 **Descriere detaliată:**
 
-Toate datele din acest proiect sunt **100% originale**, create manual pentru domeniul specific Text-to-Blender:
+Toate datele din acest proiect sunt **100% originale**, create manual și generate automat pentru domeniul specific Text-to-Blender:
 
-1. **Scripturi Blender Python** (40+ fișiere în `data/raw/blender_scripts/`):
+1. **Scripturi Blender Python** (46 fișiere în `data/raw/blender_scripts/`):
    - Fiecare script reprezintă o operație Blender specifică
    - Exemple: `create_cube_basic.py`, `apply_material_red.py`, `add_modifier_bevel.py`
    - Codul este scris manual, testat și validat în Blender 3.x/4.x
 
-2. **Dataset de antrenare** (`data/raw/blender_training_data.json`):
-   - Perechi text natural (română) → intenție clasificabilă
-   - Variații de formulare pentru fiecare intenție (5-10 per categorie)
-   - Exemple: "creează un cub roșu" → `create_cube` + `apply_material_red`
+2. **Dataset de antrenare generat** (`data/generated/training_data.json`):
+   - **1,560 perechi** text natural (română) → intenție clasificabilă
+   - **109 intenții unice** (create_cube, apply_material_red, move_object, etc.)
+   - **16 categorii** de comenzi cu variații automate
+   - Generator: `src/data_acquisition/generate_training_data.py`
 
 3. **Template-uri parametrizate** (`src/generators/blender_generator.py`):
    - Fiecare template permite extragerea automată de parametri
    - Parametri: dimensiuni, poziții, culori, proprietăți materiale
 
-**Locația codului:** `src/data_acquisition/data_loader.py`, `src/generators/blender_generator.py`
-**Locația datelor:** `data/raw/blender_scripts/`, `data/raw/blender_training_data.json`
+**Locația codului:** 
+- `src/data_acquisition/generate_training_data.py` - Generator automat
+- `src/data_acquisition/data_loader.py` - Încărcare date
+- `src/generators/blender_generator.py` - Generare cod Blender
+
+**Locația datelor:** 
+- `data/raw/blender_scripts/` - 46 scripturi Python originale
+- `data/generated/training_data.json` - 1,560 samples generate
+- `data/generated/training_data.csv` - Format CSV pentru antrenare
 
 **Dovezi:**
-- Scripturi Python: `data/raw/blender_scripts/*.py` (40+ fișiere)
-- Dataset JSON: `data/raw/blender_training_data.json`
+- Scripturi Python: `data/raw/blender_scripts/*.py` (46 fișiere)
+- Dataset JSON: `data/generated/training_data.json` (1,560 samples)
+- Dataset CSV: `data/generated/training_data.csv`
 - Generator cu template-uri: `src/generators/blender_generator.py`
 
 ---
