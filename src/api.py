@@ -442,11 +442,15 @@ def get_preprocessing_config():
 # ==================== Blender Text-to-Code ====================
 
 from generators.blender_generator import BlenderScriptGenerator
+from neural_network.inference import get_classifier, classify_intent
 
 # Inițializare generator Blender
 blender_generator = BlenderScriptGenerator()
 
-# Mapping simplu text → intenție (va fi înlocuit cu RN antrenat)
+# Încărcare clasificator RN la startup
+intent_classifier = get_classifier()
+
+# Mapping simplu text → intenție (FALLBACK dacă modelul nu e încărcat)
 INTENT_KEYWORDS = {
     "create_cube": ["cub", "cube", "box", "cutie"],
     "create_sphere": ["sfera", "sferă", "sphere", "bila", "bilă", "ball"],
@@ -460,7 +464,7 @@ INTENT_KEYWORDS = {
 def classify_intent_simple(text: str) -> str:
     """
     Clasificare simplă bazată pe cuvinte cheie.
-    În producție, aceasta va fi înlocuită cu inferența RN.
+    Folosită ca FALLBACK dacă modelul RN nu e disponibil.
     """
     text_lower = text.lower()
     for intent, keywords in INTENT_KEYWORDS.items():
@@ -470,6 +474,29 @@ def classify_intent_simple(text: str) -> str:
     return "create_cube"  # Default
 
 
+def classify_intent_hybrid(text: str) -> dict:
+    """
+    Clasificare hibridă: folosește RN dacă e disponibil, altfel reguli.
+    
+    Returns:
+        Dict cu intent, confidence, method
+    """
+    # Încearcă mai întâi cu modelul RN
+    if intent_classifier.is_loaded:
+        result = intent_classifier.predict(text, top_k=3)
+        if result.get("confidence", 0) > 0.3:  # Threshold minim
+            return result
+    
+    # Fallback la reguli simple
+    intent = classify_intent_simple(text)
+    return {
+        "intent": intent,
+        "confidence": 0.8,  # Artificial pentru reguli
+        "top_k": [{"intent": intent, "confidence": 0.8}],
+        "method": "keyword_rules"
+    }
+
+
 @app.route("/api/blender/generate", methods=["POST"])
 def generate_blender_code():
     """
@@ -477,7 +504,7 @@ def generate_blender_code():
     
     Pipeline:
     1. Primește text de la utilizator
-    2. Clasifică intenția (RN sau rule-based)
+    2. Clasifică intenția cu RN antrenat (sau fallback reguli)
     3. Extrage parametrii din text
     4. Generează script Python pentru Blender
     """
@@ -488,9 +515,12 @@ def generate_blender_code():
         
         user_text = data["text"]
         
-        # 1. Clasificare intenție
-        # TODO: Înlocuiește cu model.predict() după antrenare
-        intent = classify_intent_simple(user_text)
+        # 1. Clasificare intenție cu model RN sau fallback
+        classification = classify_intent_hybrid(user_text)
+        intent = classification["intent"]
+        confidence = classification["confidence"]
+        method = classification.get("method", "unknown")
+        top_k = classification.get("top_k", [])
         
         # 2. Extragere parametri din text
         params = blender_generator.extract_parameters_from_text(user_text)
@@ -502,8 +532,11 @@ def generate_blender_code():
         return jsonify({
             "success": True,
             "intent": intent,
+            "confidence": confidence,
+            "classification_method": method,
+            "top_predictions": top_k,
             "params": params,
-            "interpretation": f"Am înțeles că vrei să creezi: {intent.replace('_', ' ')}",
+            "interpretation": f"Am înțeles că vrei să: {intent.replace('_', ' ')} (încredere: {confidence*100:.1f}%)",
             "code": script
         })
         
@@ -514,9 +547,31 @@ def generate_blender_code():
 @app.route("/api/blender/intents")
 def get_blender_intents():
     """Returnează lista de intenții disponibile."""
+    if intent_classifier.is_loaded:
+        intents = intent_classifier.get_available_intents()
+        return jsonify({
+            "intents": intents,
+            "count": len(intents),
+            "model_loaded": True,
+            "method": "neural_network"
+        })
+    else:
+        return jsonify({
+            "intents": list(INTENT_KEYWORDS.keys()),
+            "keywords": INTENT_KEYWORDS,
+            "model_loaded": False,
+            "method": "keyword_rules"
+        })
+
+
+@app.route("/api/blender/model-status")
+def get_model_status():
+    """Returnează starea modelului de clasificare."""
     return jsonify({
-        "intents": list(INTENT_KEYWORDS.keys()),
-        "keywords": INTENT_KEYWORDS
+        "model_loaded": intent_classifier.is_loaded,
+        "vocab_size": intent_classifier.vocab_size if intent_classifier.is_loaded else 0,
+        "num_intents": intent_classifier.num_classes if intent_classifier.is_loaded else len(INTENT_KEYWORDS),
+        "method": "neural_network" if intent_classifier.is_loaded else "keyword_rules"
     })
 
 
