@@ -43,7 +43,7 @@ Această etapă corespunde punctului **6. Configurarea și antrenarea modelului 
 
 **Înainte de a începe Etapa 5, verificați că aveți din Etapa 4:**
 
-- [x] **State Machine** definit și documentat în `docs/diagrams/state_machine.png`
+- [x] **State Machine** definit și documentat în `docs/state_machine.png`
 - [x] **Contribuție ≥40% date originale** în `data/raw/` - 100% date generate de noi (1,560 samples)
 - [x] **Modul 1 (Data Logging)** funcțional - `src/data_acquisition/data_loader.py`
 - [x] **Modul 2 (RN)** cu arhitectură definită dar NEANTRENATĂ (`models/untrained_model.pt`)
@@ -117,12 +117,13 @@ Completați tabelul cu hiperparametrii folosiți și **justificați fiecare aleg
 |--------------------|-------------------|-----------------|
 | Learning rate | 0.001 | Valoare standard pentru Adam optimizer, asigură convergență stabilă pentru clasificare multi-class |
 | Batch size | 32 | Cu 1,092 train samples → 34 iterații/epocă. Compromis optim memorie/stabilitate gradient |
-| Number of epochs | 100 (max) | Cu early stopping patience=10; a rulat efectiv 36 epoci |
-| Optimizer | Adam | Adaptive learning rate, performant pentru rețele feed-forward cu 3 straturi hidden |
+| Number of epochs | 150 (max) | Cu early stopping patience=10; a rulat efectiv 57 epoci |
+| Optimizer | Adam | Adaptive learning rate, performant pentru rețele feed-forward cu 2 straturi hidden |
 | Loss function | CrossEntropyLoss | Standard pentru clasificare multi-class cu 109 clase (intenții Blender) |
 | Activation functions | ReLU (hidden), Softmax (output) | ReLU evită vanishing gradient, Softmax pentru probabilități clase |
-| Hidden layers | [128, 64, 32] | Piramidă descrescătoare pentru compresie progresivă a features |
-| Dropout | 0.2 | Regularizare pentru prevenire overfitting la dataset mic |
+| Hidden layers | [128, 64] | Simplificată pentru anti-overfitting (redusă de la [128, 64, 32]) |
+| Dropout | 0.3 | Crescut de la 0.2 pentru mai multă regularizare anti-overfitting |
+| Weight Decay (L2) | 1e-4 | Regularizare L2 pentru prevenire overfitting |
 | Early stopping | patience=10 | Oprește antrenarea după 10 epoci fără îmbunătățire val_loss |
 
 **Justificare detaliată batch size:**
@@ -138,15 +139,15 @@ Aceasta oferă un echilibru între:
 **Statistici Antrenare:**
 | Parametru | Valoare |
 |-----------|--------|
-| Epoci rulate | 36 (din 100 max) |
-| Timp total antrenare | 3.17 secunde |
+| Epoci rulate | 57 (din 150 max) |
+| Timp total antrenare | ~5 secunde |
 | Device | CPU |
 | Train samples | 1,092 |
 | Validation samples | 234 |
 | Test samples | 234 |
 | Număr clase | 109 intenții unice |
 | Vocabular | 523 cuvinte unice |
-| Parametri model | 81,005 |
+| Parametri model | 82,413 (simplificat) |
 
 **Resurse învățare rapidă:**
 - Împărțire date: https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.train_test_split.html (video 3 min: https://youtu.be/1NjLMWSGosI?si=KL8Qv2SJ1d_mFZfr)  
