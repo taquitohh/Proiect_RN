@@ -12,17 +12,20 @@
 
 | **Metrică** | **Valoare** | **Target** | **Status** |
 |-------------|-------------|------------|------------|
-| **Accuracy** | 85.90% | ≥65% | ✅ **ATINS** |
-| **F1 Score (macro)** | 0.7745 | ≥0.60 | ✅ **ATINS** |
-| **F1 Score (weighted)** | 0.8194 | - | ✅ |
-| **Validare Accuracy** | 83.33% | - | ✅ Bun |
-| **Gap Train-Val** | 13.46% | <10% | ⚠️ Acceptabil |
+| **Accuracy** | 85.47% | ≥65% | ✅ **ATINS** |
+| **F1 Score (macro)** | 0.8053 | ≥0.60 | ✅ **ATINS** |
+| **Validare Accuracy** | 82.48% | - | ✅ Bun |
+| **Gap Train-Val** | 13.71% | <10% | ⚠️ Acceptabil |
+| **ONNX Latență** | 0.03ms | <50ms | ✅ **PASS** |
 
-**🔧 Măsuri Anti-Overfitting Aplicate:**
-- Dropout: 0.3 (crescut de la 0.2)
-- Weight Decay (L2): 1e-4
-- Early Stopping: patience=10
-- Arhitectură simplificată: [128, 64] (de la [128, 64, 32])
+**🔧 Măsuri Implementate (Nivel 2 + Nivel 3):**
+- ✅ Dropout: 0.3 (crescut de la 0.2)
+- ✅ Weight Decay (L2): 1e-4
+- ✅ Early Stopping: patience=10
+- ✅ **Learning Rate Scheduler**: ReduceLROnPlateau (factor=0.5, patience=5)
+- ✅ **Augmentări NLP**: sinonime, swap cuvinte (+13% date noi)
+- ✅ **Export ONNX**: `models/trained_model.onnx` (8.32 KB)
+- ✅ **Benchmark latență**: 0.03ms (1666x mai rapid decât cerința de 50ms)
 
 ---
 
@@ -495,15 +498,15 @@ streamlit run src/app/main.py
 
 ### Documentație Nivel 2 (dacă aplicabil)
 - [x] Early stopping implementat și documentat în cod (patience=10)
-- [ ] Learning rate scheduler folosit (ReduceLROnPlateau / StepLR)
-- [ ] Augmentări relevante domeniu aplicate
+- [x] Learning rate scheduler folosit (ReduceLROnPlateau - factor=0.5, patience=5)
+- [x] Augmentări relevante domeniu aplicate (sinonime NLP, swap cuvinte, +13% date)
 - [x] Grafic loss/val_loss salvat în `results/training_curves.png`
 - [x] Analiză erori în context industrial completată (4 întrebări răspunse)
-- [x] Metrici Nivel 2: **Accuracy 85.90%** ≥75% ✅, **F1 0.7745** ≥0.70 ✅
+- [x] Metrici Nivel 2: **Accuracy 85.47%** ≥75% ✅, **F1 0.8053** ≥0.70 ✅
 
 ### Documentație Nivel 3 Bonus (dacă aplicabil)
 - [x] Comparație 2+ arhitecturi: [128,64,32] vs [128,64] - simplificată pentru anti-overfitting
-- [ ] Export ONNX/TFLite + benchmark latență (<50ms demonstrat)
+- [x] Export ONNX + benchmark latență: **0.03ms** (<50ms demonstrat) - `models/trained_model.onnx`
 - [x] Confusion matrix salvată în `results/confusion_matrix.png`
 - [x] Analiză erori (erori analizate în `results/error_analysis.csv`)
 

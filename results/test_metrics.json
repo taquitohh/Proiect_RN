@@ -1,23 +1,20 @@
 {
-  "test_loss": 1.0050311274826527,
-  "accuracy": 0.8589743589743589,
-  "f1_macro": 0.7744591827925161,
-  "train_val_gap": 0.13461538461538458,
-  "overfitting_status": "OVERFIT",
-  "epochs_completed": 57,
-  "training_time_seconds": 4.597848,
-  "config": {
-    "hidden_layers": [
-      128,
-      64
-    ],
-    "dropout": 0.3,
-    "learning_rate": 0.001,
-    "weight_decay": 0.0001,
-    "batch_size": 32,
-    "epochs": 150,
-    "patience": 10,
-    "min_delta": 0.001
+  "test_accuracy": 0.8547008547008547,
+  "test_f1_macro": 0.8053236729398651,
+  "train_accuracy": 0.9619124797406807,
+  "val_accuracy": 0.8247863247863247,
+  "epochs_trained": 49,
+  "best_val_loss": 1.1843480169773102,
+  "features_used": {
+    "early_stopping": true,
+    "lr_scheduler": "ReduceLROnPlateau",
+    "augmentation": "30.0%",
+    "weight_decay": 0.0001
   },
-  "timestamp": "2025-12-16T15:24:58.571293"
+  "onnx_benchmark": {
+    "avg_ms": 0.027580000005400507,
+    "min_ms": 0.018200000340584666,
+    "max_ms": 0.1407999989169184,
+    "p95_ms": 0.06179499969221068
+  }
 }

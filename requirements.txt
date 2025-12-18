@@ -5,6 +5,11 @@
 torch>=2.5.1
 torchvision>=0.20.1
 
+# Export ONNX (Nivel 3)
+onnx>=1.17.0
+onnxruntime>=1.20.0
+onnxscript>=0.1.0
+
 # Calcul științific și manipulare date
 numpy>=2.1.3
 pandas>=2.2.3
