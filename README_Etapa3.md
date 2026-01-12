@@ -135,10 +135,10 @@ project-name/
 
 ##  6. Stare Etapă (de completat de student)
 
-- [ ] Structură repository configurată
-- [ ] Dataset analizat (EDA realizată)
-- [ ] Date preprocesate
-- [ ] Seturi train/val/test generate
-- [ ] Documentație actualizată în README + `data/README.md`
+ - [x] Structură repository configurată
+ - [x] Dataset analizat (EDA realizată)
+ - [x] Date preprocesate
+ - [x] Seturi train/val/test generate
+ - [x] Documentație actualizată în README + `data/README.md`
 
 ---
