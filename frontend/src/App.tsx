@@ -12,88 +12,88 @@ interface Conversation {
 }
 
 // Exemplu de cod pentru demo
-const generateExampleCode = (intent: string, params: Record<string, unknown>) => {
-  const templates: Record<string, string> = {
-    create_cube: `import bpy
-
-# Ștergem obiectele existente (opțional)
-# bpy.ops.object.select_all(action='SELECT')
-# bpy.ops.object.delete()
-
-# Creăm un cub
-bpy.ops.mesh.primitive_cube_add(
-    size=${params.size || 2},
-    location=(${params.x || 0}, ${params.y || 0}, ${params.z || 0})
-)
-
-# Redenumim obiectul
-cube = bpy.context.active_object
-cube.name = "Cube_Generated"
-
-print("Cub creat cu succes!")`,
-
-    create_sphere: `import bpy
-
-# Creăm o sferă
-bpy.ops.mesh.primitive_uv_sphere_add(
-    radius=${params.radius || 1},
-    location=(${params.x || 0}, ${params.y || 0}, ${params.z || 0}),
-    segments=32,
-    ring_count=16
-)
-
-# Redenumim obiectul
-sphere = bpy.context.active_object
-sphere.name = "Sphere_Generated"
-
-# Aplicăm smooth shading
-bpy.ops.object.shade_smooth()
-
-print("Sferă creată cu succes!")`,
-
-    create_cylinder: `import bpy
-
-# Creăm un cilindru
-bpy.ops.mesh.primitive_cylinder_add(
-    radius=${params.radius || 1},
-    depth=${params.height || 2},
-    location=(${params.x || 0}, ${params.y || 0}, ${params.z || 0})
-)
-
-# Redenumim obiectul
-cylinder = bpy.context.active_object
-cylinder.name = "Cylinder_Generated"
-
-print("Cilindru creat cu succes!")`,
-
-    apply_material: `import bpy
-
-# Obținem obiectul activ
-obj = bpy.context.active_object
-
-# Creăm un material nou
-mat = bpy.data.materials.new(name="${params.material_name || 'Material_Generated'}")
-mat.use_nodes = True
-
-# Configurăm culoarea
-nodes = mat.node_tree.nodes
-principled = nodes.get("Principled BSDF")
-if principled:
-    principled.inputs["Base Color"].default_value = (${params.r || 0.8}, ${params.g || 0.2}, ${params.b || 0.2}, 1.0)
-    principled.inputs["Metallic"].default_value = ${params.metallic || 0.0}
-    principled.inputs["Roughness"].default_value = ${params.roughness || 0.5}
-
-# Aplicăm materialul
-if obj.data.materials:
-    obj.data.materials[0] = mat
-else:
-    obj.data.materials.append(mat)
-
-print("Material aplicat cu succes!")`,
-  };
-
-  return templates[intent] || templates.create_cube;
-};
+//const generateExampleCode = (intent: string, params: Record<string, unknown>) => {
+//  const templates: Record<string, string> = {
+//    create_cube: `import bpy
+//
+//# Ștergem obiectele existente (opțional)
+//# bpy.ops.object.select_all(action='SELECT')
+//# bpy.ops.object.delete()
+//
+//# Creăm un cub
+//bpy.ops.mesh.primitive_cube_add(
+//    size=${params.size || 2},
+//    location=(${params.x || 0}, ${params.y || 0}, ${params.z || 0})
+//)
+//
+//# Redenumim obiectul
+//cube = bpy.context.active_object
+//cube.name = "Cube_Generated"
+//
+//print("Cub creat cu succes!")`,
+//
+//    create_sphere: `import bpy
+//
+//# Creăm o sferă
+//bpy.ops.mesh.primitive_uv_sphere_add(
+//    radius=${params.radius || 1},
+//    location=(${params.x || 0}, ${params.y || 0}, ${params.z || 0}),
+//    segments=32,
+//    ring_count=16
+//)
+//
+//# Redenumim obiectul
+//sphere = bpy.context.active_object
+//sphere.name = "Sphere_Generated"
+//
+//# Aplicăm smooth shading
+//bpy.ops.object.shade_smooth()
+//
+//print("Sferă creată cu succes!")`,
+//
+//    create_cylinder: `import bpy
+//
+//# Creăm un cilindru
+//bpy.ops.mesh.primitive_cylinder_add(
+//    radius=${params.radius || 1},
+//    depth=${params.height || 2},
+//    location=(${params.x || 0}, ${params.y || 0}, ${params.z || 0})
+//)
+//
+//# Redenumim obiectul
+//cylinder = bpy.context.active_object
+//cylinder.name = "Cylinder_Generated"
+//
+//print("Cilindru creat cu succes!")`,
+//
+//    apply_material: `import bpy
+//
+//# Obținem obiectul activ
+//obj = bpy.context.active_object
+//
+//# Creăm un material nou
+//mat = bpy.data.materials.new(name="${params.material_name || 'Material_Generated'}")
+//mat.use_nodes = True
+//
+//# Configurăm culoarea
+//nodes = mat.node_tree.nodes
+//principled = nodes.get("Principled BSDF")
+//if principled:
+//    principled.inputs["Base Color"].default_value = (${params.r || 0.8}, ${params.g || 0.2}, ${params.b || 0.2}, 1.0)
+//    principled.inputs["Metallic"].default_value = ${params.metallic || 0.0}
+//    principled.inputs["Roughness"].default_value = ${params.roughness || 0.5}
+//
+//# Aplicăm materialul
+//if obj.data.materials:
+//    obj.data.materials[0] = mat
+//else:
+//    obj.data.materials.append(mat)
+//
+//print("Material aplicat cu succes!")`,
+//  };
+//
+//  return templates[intent] || templates.create_cube;
+//};
 
 function App() {
   const [darkMode, setDarkMode] = useState(true);
@@ -185,29 +185,29 @@ function App() {
       }
     } catch (error) {
       // Fallback la generare locală dacă backend-ul nu e disponibil
-      console.warn('Backend indisponibil, folosesc generare locală:', error);
+      //console.warn('Backend indisponibil, folosesc generare locală:', error);
+      //
+      //const lowerContent = content.toLowerCase();
+      //
+      //if (lowerContent.includes('sfer')) {
+      //  intent = 'create_sphere';
+      //  interpretation = 'Am înțeles că vrei să creezi o sferă. (offline mode)';
+      //  params = { radius: 1 };
+      //} else if (lowerContent.includes('cilindru')) {
+      //  intent = 'create_cylinder';
+      //  interpretation = 'Am înțeles că vrei să creezi un cilindru. (offline mode)';
+      //  params = { radius: 1, depth: 2 };
+      //} else if (lowerContent.includes('cub')) {
+      //  intent = 'create_cube';
+      //  interpretation = 'Am înțeles că vrei să creezi un cub. (offline mode)';
+      //  params = { size: 2 };
+      //} else {
+      //  intent = 'create_cube';
+      //  interpretation = 'Generez un cub implicit. (offline mode)';
+      //  params = { size: 2 };
+      //}
       
-      const lowerContent = content.toLowerCase();
-      
-      if (lowerContent.includes('sfer')) {
-        intent = 'create_sphere';
-        interpretation = 'Am înțeles că vrei să creezi o sferă. (offline mode)';
-        params = { radius: 1 };
-      } else if (lowerContent.includes('cilindru')) {
-        intent = 'create_cylinder';
-        interpretation = 'Am înțeles că vrei să creezi un cilindru. (offline mode)';
-        params = { radius: 1, depth: 2 };
-      } else if (lowerContent.includes('cub')) {
-        intent = 'create_cube';
-        interpretation = 'Am înțeles că vrei să creezi un cub. (offline mode)';
-        params = { size: 2 };
-      } else {
-        intent = 'create_cube';
-        interpretation = 'Generez un cub implicit. (offline mode)';
-        params = { size: 2 };
-      }
-      
-      code = generateExampleCode(intent, params);
+      //code = generateExampleCode(intent, params);
     }
 
     // Răspunsul AI

@@ -112,6 +112,21 @@ class BlenderScriptGenerator:
         """
         # 1. Selectare template
         template = self.templates.get(intent, "")
+        
+        # 1.1 Support pentru materiale dinamice (pattern match)
+        if not template and intent.startswith("apply_material_"):
+            color = intent.replace("apply_material_", "")
+            # Mapare culori de bază
+            color_map = {
+                "red": "(1, 0, 0, 1)", "green": "(0, 1, 0, 1)", "blue": "(0, 0, 1, 1)",
+                "white": "(1, 1, 1, 1)", "black": "(0, 0, 0, 1)", "yellow": "(1, 1, 0, 1)",
+                "gray": "(0.5, 0.5, 0.5, 1)", "orange": "(1, 0.5, 0, 1)", "purple": "(0.5, 0, 0.5, 1)",
+                "cyan": "(0, 1, 1, 1)", "magenta": "(1, 0, 1, 1)", "silver": "(0.75, 0.75, 0.75, 1)",
+                "gold": "(1, 0.84, 0, 1)", "beige": "(0.96, 0.96, 0.86, 1)"
+            }
+            rgba = color_map.get(color, "(0.8, 0.8, 0.8, 1)") # Default gri deschis
+            template = f"mat = bpy.data.materials.new(name='{color.capitalize()}')\\nmat.diffuse_color = {rgba}\\nif bpy.context.active_object:\\n    bpy.context.active_object.data.materials.append(mat)"
+
         if not template:
             return "# Eroare: Nu am putut identifica un template pentru intentia: " + intent
 

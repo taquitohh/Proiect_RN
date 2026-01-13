@@ -1,6 +1,6 @@
 {
-  "vocab_size": 523,
-  "num_classes": 109,
+  "vocab_size": 519,
+  "num_classes": 107,
   "random_state": 42,
   "split_ratios": {
     "train": 0.7,
@@ -44,7 +44,6 @@
     "apply_material_lime",
     "apply_material_magenta",
     "apply_material_marble",
-    "apply_material_metal",
     "apply_material_mirror",
     "apply_material_navy",
     "apply_material_olive",
@@ -105,7 +104,6 @@
     "help_export",
     "help_general",
     "help_light",
-    "help_rotate",
     "help_scale",
     "move_object",
     "render_scene",

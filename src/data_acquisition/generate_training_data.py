@@ -221,6 +221,7 @@ def generate_create_object_samples(n: int = 100) -> List[Dict]:
             f"pot să am {obj_name}?",
             f"adaugă {obj_name} în scenă",
             f"pune {obj_name}",
+            obj_name, # Adăugat: doar numele obiectului (ex: "cub", "sferă")
         ]
         
         # Opțional: adaugă dimensiune
