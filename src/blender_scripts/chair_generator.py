@@ -129,7 +129,7 @@ if has_backrest == 1 and backrest_height > 0:
     )
     backrest.location = (
         0.0,
-        -(seat_depth / 2.0 + backrest_thickness / 2.0),
+        -(seat_depth / 2.0) + backrest_thickness / 2.0,
         seat_top_z + backrest_height / 2.0
     )
 

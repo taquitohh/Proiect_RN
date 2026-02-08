@@ -12,7 +12,8 @@ import urllib.request
 from pathlib import Path
 
 import numpy as np
-from flask import Flask, render_template_string, request
+import pandas as pd
+from flask import Flask, jsonify, render_template_string, request
 from tensorflow import keras
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -59,14 +60,61 @@ def load_artifacts() -> tuple[keras.Model, object]:
     return model, scaler
 
 
-def build_input_array(values) -> np.ndarray:
-    """Build a 2D numpy array from user inputs."""
-    return np.array([values], dtype=float)
+def check_blender_api(timeout: float = 1.2) -> tuple[bool, str | None]:
+    request_obj = urllib.request.Request(BLENDER_API_URL, method="OPTIONS")
+    try:
+        with urllib.request.urlopen(request_obj, timeout=timeout) as response:
+            if response.status >= 400:
+                return False, f"HTTP {response.status}"
+        return True, None
+    except (urllib.error.URLError, urllib.error.HTTPError, OSError) as exc:
+        return False, str(exc)
+
+
+FEATURE_COLUMNS = [
+    "seat_height",
+    "seat_width",
+    "seat_depth",
+    "leg_count",
+    "leg_thickness",
+    "has_backrest",
+    "backrest_height",
+    "style_variant",
+]
+
+
+def build_input_array(values: dict) -> pd.DataFrame:
+    """Build a DataFrame with feature names to match scaler training."""
+    row = {
+        "seat_height": values["seat_height"],
+        "seat_width": values["seat_width"],
+        "seat_depth": values["seat_depth"],
+        "leg_count": values["leg_count"],
+        "leg_thickness": values["leg_size"],
+        "has_backrest": values["has_backrest"],
+        "backrest_height": values["backrest_height"],
+        "style_variant": values["style_variant"],
+    }
+    return pd.DataFrame([row], columns=FEATURE_COLUMNS)
 
 
 app = Flask(__name__)
 
 MODEL, SCALER = load_artifacts()
+
+
+@app.route("/status", methods=["GET"])
+def status():
+    blender_ok, blender_error = check_blender_api()
+    return jsonify(
+        {
+            "ui_ok": True,
+            "model_ok": True,
+            "blender_api_ok": blender_ok,
+            "blender_api_url": BLENDER_API_URL,
+            "blender_api_error": blender_error,
+        }
+    )
 
 
 HTML_TEMPLATE = """
@@ -93,9 +141,9 @@ HTML_TEMPLATE = """
             body {
                 font-family: "Space Grotesk", "Segoe UI", sans-serif;
                 margin: 0;
-                background: radial-gradient(1200px 400px at 20% -10%, rgba(79, 140, 122, 0.35) 0%, rgba(79, 140, 122, 0) 60%),
-                    radial-gradient(900px 500px at 100% 0%, rgba(201, 122, 90, 0.35) 0%, rgba(201, 122, 90, 0) 55%),
-                    var(--bg);
+                background: radial-gradient(1200px 520px at 18% -12%, rgba(79, 140, 122, 0.35) 0%, rgba(79, 140, 122, 0) 62%),
+                    radial-gradient(980px 680px at 82% 115%, rgba(201, 122, 90, 0.32) 0%, rgba(201, 122, 90, 0) 60%),
+                    linear-gradient(180deg, #0e1116 0%, #0b0f14 100%);
                 color: var(--ink);
             }
 
@@ -137,12 +185,105 @@ HTML_TEMPLATE = """
                 box-shadow: var(--shadow);
             }
 
+            .status-board {
+                justify-self: end;
+                display: grid;
+                gap: 8px;
+                padding: 14px 16px;
+                border-radius: 18px;
+                background: rgba(21, 26, 34, 0.95);
+                border: 1px solid var(--border);
+                box-shadow: var(--shadow);
+                min-width: 240px;
+            }
+
+            .status-title {
+                font-size: 11px;
+                text-transform: uppercase;
+                letter-spacing: 0.2em;
+                color: var(--muted);
+            }
+
+            .status-item {
+                display: grid;
+                grid-template-columns: 10px 1fr;
+                gap: 10px;
+                align-items: center;
+            }
+
+            .status-dot {
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+                background: #6f7b8b;
+                box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.04);
+            }
+
+            .status-dot.ok { background: #4fb48c; }
+            .status-dot.down { background: #d26c6c; }
+            .status-dot.pending { background: #d1a15f; }
+
+            .status-text {
+                display: grid;
+                gap: 2px;
+                font-size: 13px;
+            }
+
+            .status-label {
+                font-weight: 600;
+                color: var(--ink);
+            }
+
+            .status-meta {
+                font-size: 12px;
+                color: var(--muted);
+            }
+
+            .status-note {
+                font-size: 12px;
+                color: var(--muted);
+                line-height: 1.4;
+            }
+
             .card {
                 background: var(--paper);
                 border-radius: 20px;
                 padding: 20px;
                 box-shadow: var(--shadow);
                 border: 1px solid var(--border);
+            }
+
+            .layout {
+                display: grid;
+                grid-template-columns: minmax(280px, 0.9fr) minmax(320px, 1.1fr);
+                gap: 22px;
+                align-items: stretch;
+            }
+
+            .panel {
+                display: flex;
+                flex-direction: column;
+                gap: 16px;
+                height: 100%;
+            }
+
+            .input-panel .grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 10px;
+            }
+
+            .input-panel input,
+            .input-panel select {
+                padding: 8px 10px;
+            }
+
+            .panel-title {
+                font-size: 14px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.08em;
+                color: var(--muted);
+                margin: 0 0 6px;
             }
 
             .grid {
@@ -205,12 +346,14 @@ HTML_TEMPLATE = """
 
             .script-wrap {
                 position: relative;
+                flex: 1;
+                display: flex;
             }
 
             .copy-btn {
                 position: absolute;
-                top: 10px;
-                right: 10px;
+                top: 8px;
+                right: 8px;
                 background: rgba(15, 20, 27, 0.9);
                 border: 1px solid var(--border);
                 color: var(--ink);
@@ -240,6 +383,38 @@ HTML_TEMPLATE = """
                 line-height: 1.5;
             }
 
+            .code-block {
+                max-height: 420px;
+                overflow: auto;
+                white-space: pre;
+            }
+
+            .script-wrap .code-block {
+                padding-top: 36px;
+                flex: 1;
+                max-height: none;
+                min-height: 260px;
+            }
+
+            .output-card {
+                display: flex;
+                flex-direction: column;
+                gap: 16px;
+                height: 100%;
+            }
+
+            .output-block {
+                background: #0f141b;
+                border: 1px solid var(--border);
+                border-radius: 16px;
+                padding: 14px;
+            }
+
+            .output-block h3 {
+                margin: 0 0 10px;
+                font-size: 18px;
+            }
+
             .preview {
                 margin-top: 14px;
                 border-radius: 16px;
@@ -247,6 +422,7 @@ HTML_TEMPLATE = """
                 border: 1px solid var(--border);
                 background: #0b0f14;
             }
+
 
             .preview img {
                 width: 100%;
@@ -257,6 +433,33 @@ HTML_TEMPLATE = """
                 color: var(--muted);
                 font-size: 12px;
                 margin-top: 8px;
+            }
+
+            .scroll-top {
+                position: fixed;
+                right: 24px;
+                bottom: 24px;
+                width: 44px;
+                height: 44px;
+                border-radius: 50%;
+                border: 1px solid var(--border);
+                background: rgba(15, 20, 27, 0.9);
+                color: var(--ink);
+                display: grid;
+                place-items: center;
+                cursor: pointer;
+                box-shadow: var(--shadow);
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 160ms ease, transform 160ms ease;
+                transform: translateY(6px);
+                z-index: 100;
+            }
+
+            .scroll-top.show {
+                opacity: 1;
+                pointer-events: auto;
+                transform: translateY(0);
             }
 
             .section-title {
@@ -275,124 +478,201 @@ HTML_TEMPLATE = """
 
             @media (max-width: 720px) {
                 .hero { grid-template-columns: 1fr; }
-                .badge { justify-self: start; }
+                .layout { grid-template-columns: 1fr; }
+                .input-panel .grid { grid-template-columns: 1fr; }
+            }
+
+            @media (max-width: 1100px) {
+                .input-panel .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             }
         </style>
     </head>
     <body>
+        <div id="top"></div>
         <div class="page">
             <div class="hero">
                 <div>
-                    <h1 class="title">Chair Type Classifier (Etapa 5.4)</h1>
+                    <h1 class="title">Chair Classifier + Blender Preview</h1>
                     <p class="subtitle">Introduceți parametrii geometrici ai scaunului și apăsați Predict.</p>
                 </div>
-                <div class="badge">RN + Blender Script</div>
             </div>
 
-            <form method="post" class="card">
-                <div class="grid">
-                    <div>
-                        <label for="object_type">object_type</label>
-                        <select name="object_type" id="object_type" onchange="syncObjectType()">
-                            <option value="chair" selected>chair</option>
-                            <option value="table" disabled>table (coming soon)</option>
-                            <option value="cabinet" disabled>cabinet (coming soon)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="section-title">Sezut</div>
-                <div class="grid">
-                <div>
-                    <label for="seat_height">seat_height</label>
-                    <input type="number" step="0.01" min="0.4" max="0.8" name="seat_height" id="seat_height" value="{{ values.seat_height }}" required />
-                </div>
-                <div>
-                    <label for="seat_width">seat_width</label>
-                    <input type="number" step="0.01" min="0.35" max="0.6" name="seat_width" id="seat_width" value="{{ values.seat_width }}" required />
-                </div>
-                <div>
-                    <label for="seat_depth">seat_depth</label>
-                    <input type="number" step="0.01" min="0.35" max="0.6" name="seat_depth" id="seat_depth" value="{{ values.seat_depth }}" required />
-                </div>
-                </div>
-
-                <div class="section-title">Picioare</div>
-                <div class="grid">
-                    <div>
-                        <label for="leg_count">leg_count</label>
-                        <input type="number" step="1" min="3" max="5" name="leg_count" id="leg_count" value="{{ values.leg_count }}" required />
-                    </div>
-                    <div>
-                        <label for="leg_shape">leg_shape</label>
-                        <select name="leg_shape" id="leg_shape">
-                            <option value="square" {% if values.leg_shape == "square" %}selected{% endif %}>square</option>
-                            <option value="round" {% if values.leg_shape == "round" %}selected{% endif %}>round</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="leg_size">leg_size</label>
-                        <input type="number" step="0.01" min="0.03" max="0.08" name="leg_size" id="leg_size" value="{{ values.leg_size }}" required />
-                    </div>
-                </div>
-
-                <div class="section-title">Spatar</div>
-                <div class="grid">
-                    <div>
-                        <label for="has_backrest">has_backrest</label>
-                        <select name="has_backrest" id="has_backrest">
-                            <option value="0" {% if values.has_backrest == 0 %}selected{% endif %}>0</option>
-                            <option value="1" {% if values.has_backrest == 1 %}selected{% endif %}>1</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="backrest_height">backrest_height</label>
-                        <input type="number" step="0.01" min="0.2" max="0.5" name="backrest_height" id="backrest_height" value="{{ values.backrest_height }}" required />
-                    </div>
-                    <div>
-                        <label for="style_variant">style_variant</label>
-                        <input type="number" step="1" min="0" max="2" name="style_variant" id="style_variant" value="{{ values.style_variant }}" required />
-                    </div>
-                </div>
-
-                <div style="margin-top: 12px;">
-                    <button type="submit">Predict</button>
-                </div>
-            </form>
-
-            {% if result %}
-                <div class="box">
-                    <div class="result-title">Predicted variant: {{ result.label }}</div>
-                    <div><strong>Confidence:</strong> {{ "%.2f" | format(result.confidence) }}</div>
-                    <div><strong>Probabilities:</strong></div>
-                    <pre>{{ result.probabilities | tojson(indent=2) }}</pre>
-                    <div class="output-header">
-                        <div><strong>Generated Blender script:</strong></div>
-                    </div>
-                    <div class="script-wrap">
-                        <button class="copy-btn" type="button" onclick="copyScript()" aria-label="Copy script">
-                            <svg viewBox="0 0 24 24" role="img" aria-hidden="true">
-                                <path d="M16 1H6a2 2 0 0 0-2 2v12h2V3h10V1zm3 4H10a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H10V7h9v14z"/>
-                            </svg>
-                        </button>
-                        <pre id="blender-script">{{ result.script }}</pre>
-                    </div>
-
-                    {% if result.preview_src %}
-                        <div class="preview">
-                            <img src="{{ result.preview_src }}" alt="Blender preview" />
+            <div class="layout">
+                <div class="panel input-panel">
+                    <div class="panel-title">Input</div>
+                    <form method="post" class="card">
+                        <div class="grid">
+                            <div>
+                                <label for="object_type">object_type</label>
+                                <select name="object_type" id="object_type" onchange="syncObjectType()">
+                                    <option value="chair" selected>chair</option>
+                                    <option value="table" disabled>table (coming soon)</option>
+                                    <option value="cabinet" disabled>cabinet (coming soon)</option>
+                                </select>
+                            </div>
                         </div>
-                    {% elif result.preview_error %}
-                        <div class="preview-note">Preview error: {{ result.preview_error }}</div>
-                    {% else %}
-                        <div class="preview-note">Preview: pornește Blender API pe 127.0.0.1:5001.</div>
-                    {% endif %}
+
+                        <div class="section-title">Sezut</div>
+                        <div class="grid">
+                        <div>
+                            <label for="seat_height">seat_height</label>
+                            <input type="number" step="0.01" min="0.4" max="0.8" name="seat_height" id="seat_height" value="{{ values.seat_height }}" required />
+                        </div>
+                        <div>
+                            <label for="seat_width">seat_width</label>
+                            <input type="number" step="0.01" min="0.35" max="0.6" name="seat_width" id="seat_width" value="{{ values.seat_width }}" required />
+                        </div>
+                        <div>
+                            <label for="seat_depth">seat_depth</label>
+                            <input type="number" step="0.01" min="0.35" max="0.6" name="seat_depth" id="seat_depth" value="{{ values.seat_depth }}" required />
+                        </div>
+                        </div>
+
+                        <div class="section-title">Picioare</div>
+                        <div class="grid">
+                            <div>
+                                <label for="leg_count">leg_count</label>
+                                <input type="number" step="1" min="3" max="5" name="leg_count" id="leg_count" value="{{ values.leg_count }}" required />
+                            </div>
+                            <div>
+                                <label for="leg_shape">leg_shape</label>
+                                <select name="leg_shape" id="leg_shape">
+                                    <option value="square" {% if values.leg_shape == "square" %}selected{% endif %}>square</option>
+                                    <option value="round" {% if values.leg_shape == "round" %}selected{% endif %}>round</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="leg_size">leg_size</label>
+                                <input type="number" step="0.01" min="0.03" max="0.08" name="leg_size" id="leg_size" value="{{ values.leg_size }}" required />
+                            </div>
+                        </div>
+
+                        <div class="section-title">Spatar</div>
+                        <div class="grid">
+                            <div>
+                                <label for="has_backrest">has_backrest</label>
+                                <select name="has_backrest" id="has_backrest">
+                                    <option value="0" {% if values.has_backrest == 0 %}selected{% endif %}>0</option>
+                                    <option value="1" {% if values.has_backrest == 1 %}selected{% endif %}>1</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="backrest_height">backrest_height</label>
+                                <input type="number" step="0.01" min="0.2" max="0.5" name="backrest_height" id="backrest_height" value="{{ values.backrest_height }}" required />
+                            </div>
+                            <div>
+                                <label for="style_variant">style_variant</label>
+                                <input type="number" step="1" min="0" max="2" name="style_variant" id="style_variant" value="{{ values.style_variant }}" required />
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 12px;">
+                            <button type="submit">Predict</button>
+                        </div>
+                    </form>
+                    <div class="status-board">
+                        <div class="status-title">Status pornire</div>
+                        <div class="status-item">
+                            <span class="status-dot ok"></span>
+                            <div class="status-text">
+                                <div class="status-label">UI Flask</div>
+                                <div class="status-meta">pornit</div>
+                            </div>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-dot ok"></span>
+                            <div class="status-text">
+                                <div class="status-label">Model RN</div>
+                                <div class="status-meta">incarcat</div>
+                            </div>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-dot pending" id="status-blender-dot"></span>
+                            <div class="status-text">
+                                <div class="status-label">Blender API</div>
+                                <div class="status-meta" id="status-blender-meta">verificare...</div>
+                            </div>
+                        </div>
+                        <div class="status-note">Pentru preview randat, porneste Blender API.</div>
+                    </div>
                 </div>
-            {% endif %}
+
+                <div class="panel">
+                    <div class="panel-title">Output</div>
+                    <div class="card output-card">
+                        <div class="output-block">
+                            <h3>Blender preview</h3>
+                            <div class="preview" id="preview-container">
+                                <img
+                                    id="preview-image"
+                                    src="{% if result and result.preview_src %}{{ result.preview_src }}{% endif %}"
+                                    alt="Blender preview"
+                                    style="{% if not (result and result.preview_src) %}display: none;{% endif %}"
+                                />
+                            </div>
+                            <div class="preview-note" id="preview-note">
+                                {% if result and result.preview_error %}
+                                    Preview error: {{ result.preview_error }}
+                                {% else %}
+                                    Blender API pe 127.0.0.1:5001.
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="output-block">
+                            {% if result %}
+                                <div class="result-title">Predicted variant: {{ result.label }}</div>
+                                <div><strong>Confidence:</strong> {{ "%.2f" | format(result.confidence) }}</div>
+                                <div><strong>Probabilities:</strong></div>
+                                <pre class="code-block">{{ result.probabilities | tojson(indent=2) }}</pre>
+                            {% else %}
+                                <div class="result-title">Prediction</div>
+                                <div class="preview-note">Completează datele și apasă Predict.</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="output-block" style="display: flex; flex-direction: column; gap: 10px; flex: 1;">
+                            <div class="output-header">
+                                <div><strong>Generated Blender script:</strong></div>
+                            </div>
+                            <div class="script-wrap">
+                                <button class="copy-btn" type="button" onclick="copyScript()" aria-label="Copy script">
+                                    <svg viewBox="0 0 24 24" role="img" aria-hidden="true">
+                                        <path d="M16 1H6a2 2 0 0 0-2 2v12h2V3h10V1zm3 4H10a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H10V7h9v14z"/>
+                                    </svg>
+                                </button>
+                                <pre id="blender-script" class="code-block">{% if result %}{{ result.script }}{% endif %}</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="scroll-top" type="button" id="scroll-top" aria-label="Scroll to top">
+                ↑
+            </button>
 
         <script>
             const hasBackrest = document.getElementById('has_backrest');
             const backrestHeight = document.getElementById('backrest_height');
+            const scrollTopButton = document.getElementById('scroll-top');
+            const blenderDot = document.getElementById('status-blender-dot');
+            const blenderMeta = document.getElementById('status-blender-meta');
+
+            function updateBlenderStatus(status) {
+                if (!blenderDot || !blenderMeta) {
+                    return;
+                }
+                if (status && status.blender_api_ok) {
+                    blenderDot.classList.remove('pending', 'down');
+                    blenderDot.classList.add('ok');
+                    blenderMeta.textContent = 'conectat';
+                } else {
+                    blenderDot.classList.remove('pending', 'ok');
+                    blenderDot.classList.add('down');
+                    blenderMeta.textContent = 'nepornit';
+                }
+            }
 
             function syncBackrest() {
                 if (hasBackrest.value === '0') {
@@ -430,6 +710,63 @@ HTML_TEMPLATE = """
                     .then(() => alert('Script copied to clipboard.'))
                     .catch(() => alert('Copy failed.'));
             }
+
+
+            function updateScrollTopButton() {
+                if (!scrollTopButton) {
+                    return;
+                }
+                const scrollPosition = window.pageYOffset
+                    || document.documentElement.scrollTop
+                    || document.body.scrollTop
+                    || 0;
+                if (scrollPosition > 220) {
+                    scrollTopButton.classList.add('show');
+                } else {
+                    scrollTopButton.classList.remove('show');
+                }
+            }
+
+            function scrollToTopImmediate() {
+                const topAnchor = document.getElementById('top');
+                if (topAnchor) {
+                    topAnchor.scrollIntoView({ behavior: 'auto' });
+                }
+                window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+                document.documentElement.scrollTop = 0;
+                document.body.scrollTop = 0;
+            }
+
+            if ('scrollRestoration' in history) {
+                history.scrollRestoration = 'manual';
+            }
+
+            window.addEventListener('scroll', updateScrollTopButton, { passive: true });
+            window.addEventListener('load', () => {
+                scrollToTopImmediate();
+                setTimeout(scrollToTopImmediate, 0);
+                updateScrollTopButton();
+                fetch('/status')
+                    .then((response) => response.json())
+                    .then((data) => updateBlenderStatus(data))
+                    .catch(() => updateBlenderStatus({ blender_api_ok: false }));
+            });
+            window.addEventListener('pageshow', (event) => {
+                if (event.persisted) {
+                    scrollToTopImmediate();
+                }
+            });
+
+            window.addEventListener('beforeunload', () => {
+                document.documentElement.scrollTop = 0;
+                document.body.scrollTop = 0;
+            });
+
+            if (scrollTopButton) {
+                scrollTopButton.addEventListener('click', () => {
+                    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+                });
+            }
         </script>
         </div>
     </body>
@@ -464,7 +801,16 @@ def request_preview(payload: dict) -> tuple[str | None, str | None]:
         with urllib.request.urlopen(req, timeout=60) as response:
             body = json.loads(response.read().decode("utf-8"))
         return body.get("image_base64"), None
-    except (urllib.error.URLError, json.JSONDecodeError) as exc:
+    except urllib.error.HTTPError as exc:
+        try:
+            body = json.loads(exc.read().decode("utf-8"))
+            details = body.get("details")
+            if details:
+                return None, f"{exc}: {details}"
+            return None, f"{exc}: {body.get('error', 'Unknown error')}"
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            return None, str(exc)
+    except (urllib.error.URLError, json.JSONDecodeError, OSError) as exc:
         return None, str(exc)
 
 
@@ -480,6 +826,8 @@ def index():
                 "has_backrest": 1,
                 "backrest_height": 0.25,
                 "style_variant": 0,
+            "rotate_yaw": 35.0,
+            "rotate_pitch": 15.0,
         }
 
         result = None
@@ -493,24 +841,15 @@ def index():
                 values["has_backrest"] = parse_int("has_backrest", values["has_backrest"])
                 values["backrest_height"] = parse_float("backrest_height", values["backrest_height"])
                 values["style_variant"] = parse_int("style_variant", values["style_variant"])
+                values["rotate_yaw"] = parse_float("rotate_yaw", values["rotate_yaw"])
+                values["rotate_pitch"] = parse_float("rotate_pitch", values["rotate_pitch"])
 
                 if values["has_backrest"] == 0:
                         values["backrest_height"] = 0.0
                 else:
                         values["backrest_height"] = max(0.2, min(0.5, values["backrest_height"]))
 
-                features = build_input_array(
-                        [
-                                values["seat_height"],
-                                values["seat_width"],
-                                values["seat_depth"],
-                                values["leg_count"],
-                                values["leg_size"],
-                                values["has_backrest"],
-                                values["backrest_height"],
-                                values["style_variant"],
-                        ]
-                )
+                features = build_input_array(values)
                 scaled_features = SCALER.transform(features)
                 probabilities = MODEL.predict(scaled_features, verbose=0)[0]
                 predicted_label = int(np.argmax(probabilities))
@@ -538,6 +877,8 @@ def index():
                     "has_backrest": values["has_backrest"],
                     "backrest_height": values["backrest_height"],
                     "style_variant": values["style_variant"],
+                    "rotate_yaw": values["rotate_yaw"],
+                    "rotate_pitch": values["rotate_pitch"],
                 }
                 preview_image, preview_error = request_preview(preview_payload)
                 preview_src = None
@@ -553,8 +894,13 @@ def index():
                     "preview_error": preview_error,
                 }
 
-        return render_template_string(HTML_TEMPLATE, values=values, result=result)
+        return render_template_string(
+            HTML_TEMPLATE,
+            values=values,
+            result=result,
+            blender_api_url=BLENDER_API_URL,
+        )
 
 
 if __name__ == "__main__":
-        app.run(host="127.0.0.1", port=5000, debug=True)
+    app.run(host="127.0.0.1", port=5000, debug=True, use_reloader=False)
