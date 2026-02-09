@@ -46,6 +46,34 @@ All datasets are generated programmatically with fixed seeds for reproducibility
   - 1 = double_door
   - 2 = tall_cabinet
 
+## Fridge dataset (fridges_dataset.csv)
+
+- Location: data/generated/fridges_dataset.csv
+- Samples: 12000
+- Features (8):
+  - fridge_height, fridge_width, fridge_depth
+  - door_thickness, handle_length
+  - freezer_ratio, freezer_position
+  - style_variant
+- Labels (2):
+  - 0 = top_freezer
+  - 1 = bottom_freezer
+
+## Stove dataset (stoves_dataset.csv)
+
+- Location: data/generated/stoves_dataset.csv
+- Samples: 12000
+- Features (9):
+  - stove_height, stove_width, stove_depth
+  - oven_height_ratio
+  - handle_length, glass_thickness
+  - style_variant
+  - burner_count, knob_count
+- Labels (3):
+  - 0 = gas
+  - 1 = electric
+  - 2 = induction
+
 ## Processed outputs
 
 - Cleaned data: data/processed/*_clean.csv
@@ -54,3 +82,5 @@ All datasets are generated programmatically with fixed seeds for reproducibility
   - Chairs: data/train, data/validation, data/test
   - Tables: data/tables/train, data/tables/validation, data/tables/test
   - Cabinets: data/cabinets/train, data/cabinets/validation, data/cabinets/test
+  - Fridges: data/fridges/train, data/fridges/validation, data/fridges/test
+  - Stoves: data/stoves/train, data/stoves/validation, data/stoves/test

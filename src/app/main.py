@@ -23,6 +23,8 @@ if str(PROJECT_ROOT) not in sys.path:
 from src.blender_scripts.chair_generator import generate_chair_script
 from src.blender_scripts.table_generator import generate_table_script
 from src.blender_scripts.cabinet_generator import generate_cabinet_script
+from src.blender_scripts.fridge_generator import generate_fridge_script
+from src.blender_scripts.stove_generator import generate_stove_script
 
 
 LABEL_MAPS = {
@@ -42,17 +44,30 @@ LABEL_MAPS = {
         1: "Double Door",
         2: "Tall Cabinet",
     },
+    "fridge": {
+        0: "Top Freezer",
+        1: "Bottom Freezer",
+    },
+    "stove": {
+        0: "Gas Stove",
+        1: "Electric Stove",
+        2: "Induction Stove",
+    },
 }
 
 SCALER_PATHS = {
     "chair": os.path.join("config", "preprocessing_params.pkl"),
     "table": os.path.join("config", "table_scaler.pkl"),
     "cabinet": os.path.join("config", "cabinet_scaler.pkl"),
+    "fridge": os.path.join("config", "fridge_scaler.pkl"),
+    "stove": os.path.join("config", "stove_scaler.pkl"),
 }
 MODEL_PATHS = {
     "chair": os.path.join("models", "trained_model.h5"),
     "table": os.path.join("models", "table_model.h5"),
     "cabinet": os.path.join("models", "cabinet_model.h5"),
+    "fridge": os.path.join("models", "fridge_model.h5"),
+    "stove": os.path.join("models", "stove_model.h5"),
 }
 BLENDER_API_URL = os.environ.get("BLENDER_API_URL", "http://127.0.0.1:5001/render")
 
@@ -133,6 +148,27 @@ FEATURE_COLUMNS = {
         "door_count",
         "style_variant",
     ],
+    "fridge": [
+        "fridge_height",
+        "fridge_width",
+        "fridge_depth",
+        "door_thickness",
+        "handle_length",
+        "freezer_ratio",
+        "freezer_position",
+        "style_variant",
+    ],
+    "stove": [
+        "stove_height",
+        "stove_width",
+        "stove_depth",
+        "oven_height_ratio",
+        "handle_length",
+        "glass_thickness",
+        "style_variant",
+        "burner_count",
+        "knob_count",
+    ],
 }
 
 
@@ -157,6 +193,29 @@ def build_input_array(object_type: str, values: dict) -> pd.DataFrame:
             "door_type": values["door_type"],
             "door_count": values["door_count"],
             "style_variant": values["cabinet_style_variant"],
+        }
+    elif object_type == "fridge":
+        row = {
+            "fridge_height": values["fridge_height"],
+            "fridge_width": values["fridge_width"],
+            "fridge_depth": values["fridge_depth"],
+            "door_thickness": values["door_thickness"],
+            "handle_length": values["fridge_handle_length"],
+            "freezer_ratio": values["freezer_ratio"],
+            "freezer_position": values["freezer_position"],
+            "style_variant": values["fridge_style_variant"],
+        }
+    elif object_type == "stove":
+        row = {
+            "stove_height": values["stove_height"],
+            "stove_width": values["stove_width"],
+            "stove_depth": values["stove_depth"],
+            "oven_height_ratio": values["oven_height_ratio"],
+            "handle_length": values["stove_handle_length"],
+            "glass_thickness": values["glass_thickness"],
+            "style_variant": values["stove_style_variant"],
+            "burner_count": values["burner_count"],
+            "knob_count": values["knob_count"],
         }
     else:
         row = {
@@ -569,7 +628,7 @@ HTML_TEMPLATE = """
         <div class="page">
             <div class="hero">
                 <div>
-                    <h1 class="title">Chair/Table/Cabinet Classifier + Blender Preview</h1>
+                    <h1 class="title">Chair/Table/Cabinet/Fridge/Stove Classifier + Blender Preview</h1>
                     <p class="subtitle">Selectează obiectul, completează parametrii și apasă Predict.</p>
                 </div>
             </div>
@@ -585,6 +644,8 @@ HTML_TEMPLATE = """
                                     <option value="chair" {% if values.object_type == "chair" %}selected{% endif %}>chair</option>
                                     <option value="table" {% if values.object_type == "table" %}selected{% endif %}>table</option>
                                     <option value="cabinet" {% if values.object_type == "cabinet" %}selected{% endif %}>cabinet</option>
+                                    <option value="fridge" {% if values.object_type == "fridge" %}selected{% endif %}>fridge</option>
+                                    <option value="stove" {% if values.object_type == "stove" %}selected{% endif %}>stove</option>
                                 </select>
                             </div>
                         </div>
@@ -710,6 +771,85 @@ HTML_TEMPLATE = """
                             <div>
                                 <label for="cabinet_style_variant">style_variant</label>
                                 <input type="number" step="1" min="0" max="2" name="cabinet_style_variant" id="cabinet_style_variant" value="{{ values.cabinet_style_variant }}" required />
+                            </div>
+                        </div>
+
+                        <div class="section-title fridge-only">Frigider</div>
+                        <div class="grid fridge-only">
+                            <div>
+                                <label for="fridge_height">fridge_height</label>
+                                <input type="number" step="0.01" min="1.4" max="2.1" name="fridge_height" id="fridge_height" value="{{ values.fridge_height }}" required />
+                            </div>
+                            <div>
+                                <label for="fridge_width">fridge_width</label>
+                                <input type="number" step="0.01" min="0.6" max="1.0" name="fridge_width" id="fridge_width" value="{{ values.fridge_width }}" required />
+                            </div>
+                            <div>
+                                <label for="fridge_depth">fridge_depth</label>
+                                <input type="number" step="0.01" min="0.55" max="0.8" name="fridge_depth" id="fridge_depth" value="{{ values.fridge_depth }}" required />
+                            </div>
+                            <div>
+                                <label for="door_thickness">door_thickness</label>
+                                <input type="number" step="0.01" min="0.02" max="0.05" name="door_thickness" id="door_thickness" value="{{ values.door_thickness }}" required />
+                            </div>
+                            <div>
+                                <label for="fridge_handle_length">handle_length</label>
+                                <input type="number" step="0.01" min="0.15" max="0.45" name="fridge_handle_length" id="fridge_handle_length" value="{{ values.fridge_handle_length }}" required />
+                            </div>
+                            <div>
+                                <label for="freezer_ratio">freezer_ratio</label>
+                                <input type="number" step="0.01" min="0.25" max="0.45" name="freezer_ratio" id="freezer_ratio" value="{{ values.freezer_ratio }}" required />
+                            </div>
+                            <div>
+                                <label for="freezer_position">freezer_position</label>
+                                <select name="freezer_position" id="freezer_position">
+                                    <option value="0" {% if values.freezer_position == 0 %}selected{% endif %}>top_freezer</option>
+                                    <option value="1" {% if values.freezer_position == 1 %}selected{% endif %}>bottom_freezer</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="fridge_style_variant">style_variant</label>
+                                <input type="number" step="1" min="0" max="2" name="fridge_style_variant" id="fridge_style_variant" value="{{ values.fridge_style_variant }}" required />
+                            </div>
+                        </div>
+
+                        <div class="section-title stove-only">Aragaz</div>
+                        <div class="grid stove-only">
+                            <div>
+                                <label for="stove_height">stove_height</label>
+                                <input type="number" step="0.01" min="0.85" max="0.95" name="stove_height" id="stove_height" value="{{ values.stove_height }}" required />
+                            </div>
+                            <div>
+                                <label for="stove_width">stove_width</label>
+                                <input type="number" step="0.01" min="0.6" max="0.9" name="stove_width" id="stove_width" value="{{ values.stove_width }}" required />
+                            </div>
+                            <div>
+                                <label for="stove_depth">stove_depth</label>
+                                <input type="number" step="0.01" min="0.6" max="0.75" name="stove_depth" id="stove_depth" value="{{ values.stove_depth }}" required />
+                            </div>
+                            <div>
+                                <label for="oven_height_ratio">oven_height_ratio</label>
+                                <input type="number" step="0.01" min="0.45" max="0.6" name="oven_height_ratio" id="oven_height_ratio" value="{{ values.oven_height_ratio }}" required />
+                            </div>
+                            <div>
+                                <label for="stove_handle_length">handle_length</label>
+                                <input type="number" step="0.01" min="0.35" max="0.65" name="stove_handle_length" id="stove_handle_length" value="{{ values.stove_handle_length }}" required />
+                            </div>
+                            <div>
+                                <label for="glass_thickness">glass_thickness</label>
+                                <input type="number" step="0.01" min="0.01" max="0.03" name="glass_thickness" id="glass_thickness" value="{{ values.glass_thickness }}" required />
+                            </div>
+                            <div>
+                                <label for="burner_count">burner_count</label>
+                                <input type="number" step="1" min="4" max="4" name="burner_count" id="burner_count" value="{{ values.burner_count }}" required />
+                            </div>
+                            <div>
+                                <label for="knob_count">knob_count</label>
+                                <input type="number" step="1" min="6" max="6" name="knob_count" id="knob_count" value="{{ values.knob_count }}" required />
+                            </div>
+                            <div>
+                                <label for="stove_style_variant">style_variant</label>
+                                <input type="number" step="1" min="0" max="2" name="stove_style_variant" id="stove_style_variant" value="{{ values.stove_style_variant }}" required />
                             </div>
                         </div>
 
@@ -853,11 +993,15 @@ HTML_TEMPLATE = """
                 const chairBlocks = document.querySelectorAll('.chair-only');
                 const tableBlocks = document.querySelectorAll('.table-only');
                 const cabinetBlocks = document.querySelectorAll('.cabinet-only');
+                const fridgeBlocks = document.querySelectorAll('.fridge-only');
+                const stoveBlocks = document.querySelectorAll('.stove-only');
                 const objectType = objectTypeSelect ? objectTypeSelect.value : 'chair';
 
                 chairBlocks.forEach((node) => node.classList.toggle('hidden', objectType !== 'chair'));
                 tableBlocks.forEach((node) => node.classList.toggle('hidden', objectType !== 'table'));
                 cabinetBlocks.forEach((node) => node.classList.toggle('hidden', objectType !== 'cabinet'));
+                fridgeBlocks.forEach((node) => node.classList.toggle('hidden', objectType !== 'fridge'));
+                stoveBlocks.forEach((node) => node.classList.toggle('hidden', objectType !== 'stove'));
 
                 const toggleInputs = (blocks, enabled) => {
                     blocks.forEach((node) => {
@@ -882,6 +1026,8 @@ HTML_TEMPLATE = """
                 toggleInputs(chairBlocks, objectType === 'chair');
                 toggleInputs(tableBlocks, objectType === 'table');
                 toggleInputs(cabinetBlocks, objectType === 'cabinet');
+                toggleInputs(fridgeBlocks, objectType === 'fridge');
+                toggleInputs(stoveBlocks, objectType === 'stove');
 
                 syncBackrest();
             }
@@ -1031,6 +1177,23 @@ def index():
             "door_type": 0,
             "door_count": 2,
             "cabinet_style_variant": 0,
+            "fridge_height": 1.8,
+            "fridge_width": 0.8,
+            "fridge_depth": 0.65,
+            "door_thickness": 0.03,
+            "fridge_handle_length": 0.3,
+            "freezer_ratio": 0.35,
+            "freezer_position": 0,
+            "fridge_style_variant": 0,
+            "stove_height": 0.9,
+            "stove_width": 0.7,
+            "stove_depth": 0.65,
+            "oven_height_ratio": 0.5,
+            "stove_handle_length": 0.5,
+            "glass_thickness": 0.02,
+            "burner_count": 4,
+            "knob_count": 6,
+            "stove_style_variant": 0,
             "rotate_yaw": 35.0,
             "rotate_pitch": 15.0,
         }
@@ -1127,6 +1290,97 @@ def index():
                     if preview_image:
                         preview_src = f"data:image/png;base64,{preview_image}"
                     label_map = LABEL_MAPS["cabinet"]
+                elif object_type == "fridge":
+                    values["fridge_height"] = parse_float("fridge_height", values["fridge_height"])
+                    values["fridge_width"] = parse_float("fridge_width", values["fridge_width"])
+                    values["fridge_depth"] = parse_float("fridge_depth", values["fridge_depth"])
+                    values["door_thickness"] = parse_float("door_thickness", values["door_thickness"])
+                    values["fridge_handle_length"] = parse_float("fridge_handle_length", values["fridge_handle_length"])
+                    values["freezer_ratio"] = parse_float("freezer_ratio", values["freezer_ratio"])
+                    values["freezer_position"] = parse_int("freezer_position", values["freezer_position"])
+                    values["fridge_style_variant"] = parse_int("fridge_style_variant", values["fridge_style_variant"])
+
+                    model, scaler = load_artifacts("fridge")
+                    features = build_input_array("fridge", values)
+                    scaled_features = scaler.transform(features)
+                    probabilities = model.predict(scaled_features, verbose=0)[0]
+                    predicted_label = int(np.argmax(probabilities))
+                    confidence = float(np.max(probabilities))
+
+                    script = generate_fridge_script(
+                        fridge_height=values["fridge_height"],
+                        fridge_width=values["fridge_width"],
+                        fridge_depth=values["fridge_depth"],
+                        door_thickness=values["door_thickness"],
+                        handle_length=values["fridge_handle_length"],
+                        freezer_ratio=values["freezer_ratio"],
+                        freezer_position=values["freezer_position"],
+                        style_variant=values["fridge_style_variant"],
+                    )
+
+                    preview_payload = {
+                        "object_type": "fridge",
+                        "fridge_height": values["fridge_height"],
+                        "fridge_width": values["fridge_width"],
+                        "fridge_depth": values["fridge_depth"],
+                        "door_thickness": values["door_thickness"],
+                        "handle_length": values["fridge_handle_length"],
+                        "freezer_ratio": values["freezer_ratio"],
+                        "freezer_position": values["freezer_position"],
+                        "style_variant": values["fridge_style_variant"],
+                        "rotate_yaw": values["rotate_yaw"],
+                        "rotate_pitch": values["rotate_pitch"],
+                    }
+                    preview_image, preview_error = request_preview(preview_payload)
+                    preview_src = None
+                    if preview_image:
+                        preview_src = f"data:image/png;base64,{preview_image}"
+                    label_map = LABEL_MAPS["fridge"]
+                elif object_type == "stove":
+                    values["stove_height"] = parse_float("stove_height", values["stove_height"])
+                    values["stove_width"] = parse_float("stove_width", values["stove_width"])
+                    values["stove_depth"] = parse_float("stove_depth", values["stove_depth"])
+                    values["oven_height_ratio"] = parse_float("oven_height_ratio", values["oven_height_ratio"])
+                    values["stove_handle_length"] = parse_float("stove_handle_length", values["stove_handle_length"])
+                    values["glass_thickness"] = parse_float("glass_thickness", values["glass_thickness"])
+                    values["burner_count"] = parse_int("burner_count", values["burner_count"])
+                    values["knob_count"] = parse_int("knob_count", values["knob_count"])
+                    values["stove_style_variant"] = parse_int("stove_style_variant", values["stove_style_variant"])
+
+                    model, scaler = load_artifacts("stove")
+                    features = build_input_array("stove", values)
+                    scaled_features = scaler.transform(features)
+                    probabilities = model.predict(scaled_features, verbose=0)[0]
+                    predicted_label = int(np.argmax(probabilities))
+                    confidence = float(np.max(probabilities))
+
+                    script = generate_stove_script(
+                        stove_height=values["stove_height"],
+                        stove_width=values["stove_width"],
+                        stove_depth=values["stove_depth"],
+                        oven_height_ratio=values["oven_height_ratio"],
+                        handle_length=values["stove_handle_length"],
+                        glass_thickness=values["glass_thickness"],
+                        style_variant=values["stove_style_variant"],
+                    )
+
+                    preview_payload = {
+                        "object_type": "stove",
+                        "stove_height": values["stove_height"],
+                        "stove_width": values["stove_width"],
+                        "stove_depth": values["stove_depth"],
+                        "oven_height_ratio": values["oven_height_ratio"],
+                        "handle_length": values["stove_handle_length"],
+                        "glass_thickness": values["glass_thickness"],
+                        "style_variant": values["stove_style_variant"],
+                        "rotate_yaw": values["rotate_yaw"],
+                        "rotate_pitch": values["rotate_pitch"],
+                    }
+                    preview_image, preview_error = request_preview(preview_payload)
+                    preview_src = None
+                    if preview_image:
+                        preview_src = f"data:image/png;base64,{preview_image}"
+                    label_map = LABEL_MAPS["stove"]
                 else:
                     values["seat_height"] = parse_float("seat_height", values["seat_height"])
                     values["seat_width"] = parse_float("seat_width", values["seat_width"])

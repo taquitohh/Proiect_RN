@@ -24,3 +24,21 @@ cabinet:
   loss: sparse_categorical_crossentropy
   metrics:
     - accuracy
+
+fridge:
+  epochs: 10
+  batch_size: 32
+  optimizer: Adam
+  learning_rate: 0.001
+  loss: sparse_categorical_crossentropy
+  metrics:
+    - accuracy
+
+stove:
+  epochs: 10
+  batch_size: 32
+  optimizer: Adam
+  learning_rate: 0.001
+  loss: sparse_categorical_crossentropy
+  metrics:
+    - accuracy

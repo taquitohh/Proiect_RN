@@ -43,15 +43,16 @@ Rețeaua neuronală nu generează mesh-uri direct. Ea primește parametri geomet
 | 2 | scaun de bar |
 | 3 | taburet |
 
-### Extindere ulterioara (Table + Cabinet)
+### Extindere ulterioara (Table + Cabinet + Fridge + Stove)
 
-Arhitectura ramane identica, dar proiectul este extins cu doua obiecte noi:
-table si cabinet. Fiecare obiect are:
+Arhitectura ramane identica, dar proiectul este extins cu obiecte noi:
+table, cabinet, fridge si stove. Fiecare obiect are:
 
 - dataset propriu (CSV separat)
 - reguli deterministe de etichetare
 - generator Blender propriu
-- model antrenat separat (table_model.h5, cabinet_model.h5)
+- model antrenat separat (table_model.h5, cabinet_model.h5, fridge_model.h5,
+  stove_model.h5)
 
 Fisierul `model.py` ramane unic si defineste arhitectura MLP folosita de
 toate modelele antrenate.

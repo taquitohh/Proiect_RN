@@ -64,7 +64,7 @@ project-name/
 | backrest_height | numeric | m | înălțimea spătarului | 0.00 sau 0.20–0.50 |
 | style_variant | numeric (int) | – | variantă stil | {0, 1, 2} |
 
-**Fișier recomandat:** descrierea a fost inclusă direct în acest README (nu a fost creat un `data/README.md`).
+**Fișier recomandat:** descrierea a fost centralizată în `data/README.md`.
 
 ---
 
@@ -133,9 +133,10 @@ project-name/
 
 ## Addendum (extindere proiect)
 
-Ulterior Etapei 3, proiectul a fost extins cu doua obiecte noi (table si cabinet),
-fiecare cu dataset separat, reguli deterministe si pipeline de preprocesare
-independent. Documentatia comuna a dataset-urilor este centralizata in:
+Ulterior Etapei 3, proiectul a fost extins cu obiecte noi (table, cabinet,
+fridge si stove), fiecare cu dataset separat, reguli deterministe si pipeline
+de preprocesare independent. Documentatia comuna a dataset-urilor este
+centralizata in:
 
 - `data/README.md`
 

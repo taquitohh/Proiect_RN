@@ -28,8 +28,9 @@ modelului de Rețea Neuronală. Datele utilizate sunt complet preprocesate,
 împărțite stratificat în seturi de antrenare, validare și test, conform
 bunelor practici pentru evitarea scurgerii de informație.
 
-Problema este formulată ca o clasificare multi-clasă supravegheată, cu
-4 clase posibile, folosind un model de tip MLP (Multilayer Perceptron)
+Problema este formulată ca o clasificare multi-clasă supravegheată. Pentru
+chair sunt 4 clase, iar pentru table/cabinet/stove sunt 3 clase, respectiv
+pentru fridge 2 clase, folosind un model de tip MLP (Multilayer Perceptron)
 implementat în TensorFlow/Keras.
 
 Au fost definiți hiperparametrii inițiali (baseline), care vor fi folosiți
@@ -300,7 +301,9 @@ Proiect_RN/
 │   ├── validation/
 │   ├── test/
 │   ├── tables/
-│   └── cabinets/
+│   ├── cabinets/
+│   ├── fridges/
+│   └── stoves/
 ├── src/
 │   ├── data_acquisition/
 │   ├── preprocessing/
@@ -310,18 +313,26 @@ Proiect_RN/
 │   ├── untrained_model.h5
 │   ├── trained_model.h5
 │   ├── table_model.h5
-│   └── cabinet_model.h5
+│   ├── cabinet_model.h5
+│   ├── fridge_model.h5
+│   └── stove_model.h5
 ├── results/
 │   ├── training_history.csv
 │   ├── test_metrics.json
 │   ├── table_training_history.csv
 │   ├── table_training_metrics.json
 │   ├── cabinet_training_history.csv
-│   └── cabinet_training_metrics.json
+│   ├── cabinet_training_metrics.json
+│   ├── fridge_training_history.csv
+│   ├── fridge_training_metrics.json
+│   ├── stove_training_history.csv
+│   └── stove_training_metrics.json
 ├── config/
 │   ├── preprocessing_params.pkl
 │   ├── table_scaler.pkl
-│   └── cabinet_scaler.pkl
+│   ├── cabinet_scaler.pkl
+│   ├── fridge_scaler.pkl
+│   └── stove_scaler.pkl
 ├── requirements.txt
 └── .gitignore
 ```

@@ -18,6 +18,8 @@ if str(PROJECT_ROOT) not in sys.path:
 from src.blender_scripts.chair_generator import generate_chair_script
 from src.blender_scripts.table_generator import generate_table_script
 from src.blender_scripts.cabinet_generator import generate_cabinet_script
+from src.blender_scripts.fridge_generator import generate_fridge_script
+from src.blender_scripts.stove_generator import generate_stove_script
 
 
 def resolve_blender_path() -> str:
@@ -76,6 +78,27 @@ def build_render_script(params: dict[str, Any], output_path: Path) -> str:
             door_count=int(params["door_count"]),
             style_variant=int(params["style_variant"]),
         )
+    elif object_type == "fridge":
+        object_script = generate_fridge_script(
+            fridge_height=float(params["fridge_height"]),
+            fridge_width=float(params["fridge_width"]),
+            fridge_depth=float(params["fridge_depth"]),
+            door_thickness=float(params["door_thickness"]),
+            handle_length=float(params["handle_length"]),
+            freezer_ratio=float(params["freezer_ratio"]),
+            freezer_position=int(params["freezer_position"]),
+            style_variant=int(params["style_variant"]),
+        )
+    elif object_type == "stove":
+        object_script = generate_stove_script(
+            stove_height=float(params["stove_height"]),
+            stove_width=float(params["stove_width"]),
+            stove_depth=float(params["stove_depth"]),
+            oven_height_ratio=float(params["oven_height_ratio"]),
+            handle_length=float(params["handle_length"]),
+            glass_thickness=float(params["glass_thickness"]),
+            style_variant=int(params["style_variant"]),
+        )
     else:
         object_script = generate_chair_script(
             seat_height=float(params["seat_height"]),
@@ -92,6 +115,8 @@ def build_render_script(params: dict[str, Any], output_path: Path) -> str:
     rotate_yaw = float(params.get("rotate_yaw", 35.0))
     rotate_pitch = float(params.get("rotate_pitch", 15.0))
     if object_type == "cabinet":
+        rotate_yaw = (rotate_yaw + 180.0) % 360.0
+    if object_type == "fridge":
         rotate_yaw = (rotate_yaw + 180.0) % 360.0
 
     render_script = f"""
@@ -167,6 +192,27 @@ def render_preview():
             "wall_thickness",
             "door_type",
             "door_count",
+            "style_variant",
+        }
+    elif object_type == "fridge":
+        required = {
+            "fridge_height",
+            "fridge_width",
+            "fridge_depth",
+            "door_thickness",
+            "handle_length",
+            "freezer_ratio",
+            "freezer_position",
+            "style_variant",
+        }
+    elif object_type == "stove":
+        required = {
+            "stove_height",
+            "stove_width",
+            "stove_depth",
+            "oven_height_ratio",
+            "handle_length",
+            "glass_thickness",
             "style_variant",
         }
     else:
