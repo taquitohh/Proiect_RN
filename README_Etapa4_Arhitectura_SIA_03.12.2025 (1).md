@@ -43,6 +43,19 @@ Rețeaua neuronală nu generează mesh-uri direct. Ea primește parametri geomet
 | 2 | scaun de bar |
 | 3 | taburet |
 
+### Extindere ulterioara (Table + Cabinet)
+
+Arhitectura ramane identica, dar proiectul este extins cu doua obiecte noi:
+table si cabinet. Fiecare obiect are:
+
+- dataset propriu (CSV separat)
+- reguli deterministe de etichetare
+- generator Blender propriu
+- model antrenat separat (table_model.h5, cabinet_model.h5)
+
+Fisierul `model.py` ramane unic si defineste arhitectura MLP folosita de
+toate modelele antrenate.
+
 ### 3. Nevoia reală (de ce există sistemul?)
 
 Crearea manuală de obiecte 3D pentru jocuri este lentă și repetitivă, necesitând ajustarea manuală a parametrilor geometrici și a scripturilor Blender pentru fiecare variantă de obiect. Sistemul propus utilizează o rețea neuronală pentru a clasifica automat tipul de obiect de mobilier pe baza parametrilor geometrici, generând automat un script Blender Python corespunzător, reducând semnificativ timpul de creare a asset-urilor.

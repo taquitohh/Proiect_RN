@@ -280,58 +280,58 @@ Măsuri corective:
 
 ## Structura Repository-ului la Finalul Etapei 5
 
-**Clarificare organizare:** Vom folosi **README-uri separate** pentru fiecare etapă în folderul `docs/`:
+Structura reala din proiect este:
 
 ```
-proiect-rn-[prenume-nume]/
-├── README.md                           # Overview general proiect (actualizat)
-├── etapa3_analiza_date.md         # Din Etapa 3
-├── etapa4_arhitectura_sia.md      # Din Etapa 4
-├── etapa5_antrenare_model.md      # ← ACEST FIȘIER (completat)
-│
+Proiect_RN/
+├── README – Etapa 3 -Analiza si Pregatirea Setului de Date pentru Retele Neuronale (1).md
+├── README_Etapa4_Arhitectura_SIA_03.12.2025 (1).md
+├── README_Etapa5_Antrenare_RN (1).md
 ├── docs/
-│   ├── state_machine.png              # Din Etapa 4
-│   ├── loss_curve.png                 # NOU - Grafic antrenare
-│   ├── confusion_matrix.png           # (opțional - Nivel 3)
+│   ├── state_machine.png
+│   ├── confusion_matrix.png
 │   └── screenshots/
-│       ├── inference_real.png         # NOU - OBLIGATORIU
-│       └── ui_demo.png                # Din Etapa 4
-│
-├── data/                               # Din Etapa 3-4 (NESCHIMBAT)
+├── data/
+│   ├── README.md
 │   ├── raw/
-│   ├── generated/                     # Contribuția voastră 40%
+│   ├── generated/
 │   ├── processed/
 │   ├── train/
 │   ├── validation/
-│   └── test/
-│
+│   ├── test/
+│   ├── tables/
+│   └── cabinets/
 ├── src/
-│   ├── data_acquisition/              # Din Etapa 4
-│   ├── preprocessing/                 # Din Etapa 3
-│   │   └── combine_datasets.py        # NOU (dacă ați adăugat date în Etapa 4)
+│   ├── data_acquisition/
+│   ├── preprocessing/
 │   ├── neural_network/
-│   │   ├── model.py                   # Din Etapa 4
-│   │   ├── train.py                   # NOU - Script antrenare
-│   │   └── evaluate.py                # NOU - Script evaluare
 │   └── app/
-│       └── main.py                    # ACTUALIZAT - încarcă model antrenat
-│
 ├── models/
-│   ├── untrained_model.h5             # Din Etapa 4
-│   ├── trained_model.h5               # NOU - OBLIGATORIU
-│   └── final_model.onnx               # (opțional - Nivel 3 bonus)
-│
-├── results/                            # NOU - Folder rezultate antrenare
-│   ├── training_history.csv           # OBLIGATORIU - toate epoch-urile
-│   ├── test_metrics.json              # Metrici finale pe test set
-│   └── hyperparameters.yaml           # Hiperparametri folosiți
-│
+│   ├── untrained_model.h5
+│   ├── trained_model.h5
+│   ├── table_model.h5
+│   └── cabinet_model.h5
+├── results/
+│   ├── training_history.csv
+│   ├── test_metrics.json
+│   ├── table_training_history.csv
+│   ├── table_training_metrics.json
+│   ├── cabinet_training_history.csv
+│   └── cabinet_training_metrics.json
 ├── config/
-│   └── preprocessing_params.pkl       # Din Etapa 3 (NESCHIMBAT)
-│
-├── requirements.txt                    # Actualizat
+│   ├── preprocessing_params.pkl
+│   ├── table_scaler.pkl
+│   └── cabinet_scaler.pkl
+├── requirements.txt
 └── .gitignore
 ```
+
+Fisiere recomandate pentru predare (de adaugat inainte de prezentare):
+
+- `docs/loss_curve.png`
+- `docs/screenshots/inference_real.png`
+- `docs/screenshots/ui_demo.png`
+- `results/hyperparameters.yaml`
 
 **Diferențe față de Etapa 4:**
 - Adăugat `docs/etapa5_antrenare_model.md` (acest fișier)

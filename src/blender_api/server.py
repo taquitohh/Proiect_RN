@@ -16,6 +16,8 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.blender_scripts.chair_generator import generate_chair_script
+from src.blender_scripts.table_generator import generate_table_script
+from src.blender_scripts.cabinet_generator import generate_cabinet_script
 
 
 def resolve_blender_path() -> str:
@@ -53,23 +55,47 @@ def add_cors_headers(response):
 
 
 def build_render_script(params: dict[str, Any], output_path: Path) -> str:
-    chair_script = generate_chair_script(
-        seat_height=float(params["seat_height"]),
-        seat_width=float(params["seat_width"]),
-        seat_depth=float(params["seat_depth"]),
-        leg_count=int(params["leg_count"]),
-        leg_shape=str(params["leg_shape"]),
-        leg_size=float(params["leg_size"]),
-        has_backrest=int(params["has_backrest"]),
-        backrest_height=float(params["backrest_height"]),
-        style_variant=int(params["style_variant"]),
-    )
+    object_type = str(params.get("object_type", "chair"))
+    if object_type == "table":
+        object_script = generate_table_script(
+            table_height=float(params["table_height"]),
+            table_width=float(params["table_width"]),
+            table_depth=float(params["table_depth"]),
+            leg_count=int(params["leg_count"]),
+            leg_thickness=float(params["leg_thickness"]),
+            has_apron=int(params["has_apron"]),
+            style_variant=int(params["style_variant"]),
+        )
+    elif object_type == "cabinet":
+        object_script = generate_cabinet_script(
+            cabinet_height=float(params["cabinet_height"]),
+            cabinet_width=float(params["cabinet_width"]),
+            cabinet_depth=float(params["cabinet_depth"]),
+            wall_thickness=float(params["wall_thickness"]),
+            door_type=int(params["door_type"]),
+            door_count=int(params["door_count"]),
+            style_variant=int(params["style_variant"]),
+        )
+    else:
+        object_script = generate_chair_script(
+            seat_height=float(params["seat_height"]),
+            seat_width=float(params["seat_width"]),
+            seat_depth=float(params["seat_depth"]),
+            leg_count=int(params["leg_count"]),
+            leg_shape=str(params["leg_shape"]),
+            leg_size=float(params["leg_size"]),
+            has_backrest=int(params["has_backrest"]),
+            backrest_height=float(params["backrest_height"]),
+            style_variant=int(params["style_variant"]),
+        )
 
     rotate_yaw = float(params.get("rotate_yaw", 35.0))
     rotate_pitch = float(params.get("rotate_pitch", 15.0))
+    if object_type == "cabinet":
+        rotate_yaw = (rotate_yaw + 180.0) % 360.0
 
     render_script = f"""
-{chair_script}
+{object_script}
 
 # -------------------------
 # CAMERA + LIGHT
@@ -122,17 +148,39 @@ def run_blender(script_path: Path) -> subprocess.CompletedProcess[str]:
 @app.route("/render", methods=["POST"])
 def render_preview():
     params = request.get_json(silent=True) or {}
-    required = {
-        "seat_height",
-        "seat_width",
-        "seat_depth",
-        "leg_count",
-        "leg_shape",
-        "leg_size",
-        "has_backrest",
-        "backrest_height",
-        "style_variant",
-    }
+    object_type = str(params.get("object_type", "chair"))
+    if object_type == "table":
+        required = {
+            "table_height",
+            "table_width",
+            "table_depth",
+            "leg_count",
+            "leg_thickness",
+            "has_apron",
+            "style_variant",
+        }
+    elif object_type == "cabinet":
+        required = {
+            "cabinet_height",
+            "cabinet_width",
+            "cabinet_depth",
+            "wall_thickness",
+            "door_type",
+            "door_count",
+            "style_variant",
+        }
+    else:
+        required = {
+            "seat_height",
+            "seat_width",
+            "seat_depth",
+            "leg_count",
+            "leg_shape",
+            "leg_size",
+            "has_backrest",
+            "backrest_height",
+            "style_variant",
+        }
     missing = sorted(required - set(params))
     if missing:
         return jsonify({"error": f"Missing params: {', '.join(missing)}"}), 400

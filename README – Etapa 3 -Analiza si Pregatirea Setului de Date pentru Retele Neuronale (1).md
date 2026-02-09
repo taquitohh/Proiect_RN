@@ -131,6 +131,16 @@ project-name/
 
 ---
 
+## Addendum (extindere proiect)
+
+Ulterior Etapei 3, proiectul a fost extins cu doua obiecte noi (table si cabinet),
+fiecare cu dataset separat, reguli deterministe si pipeline de preprocesare
+independent. Documentatia comuna a dataset-urilor este centralizata in:
+
+- `data/README.md`
+
+---
+
 ##  6. Stare Etapă (de completat de student)
 
 - [x] Structură repository configurată

@@ -21,17 +21,39 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.blender_scripts.chair_generator import generate_chair_script
+from src.blender_scripts.table_generator import generate_table_script
+from src.blender_scripts.cabinet_generator import generate_cabinet_script
 
 
-LABEL_MAP = {
-    0: "Simple Chair",
-    1: "Chair with Backrest",
-    2: "Bar Chair",
-    3: "Stool",
+LABEL_MAPS = {
+    "chair": {
+        0: "Simple Chair",
+        1: "Chair with Backrest",
+        2: "Bar Chair",
+        3: "Stool",
+    },
+    "table": {
+        0: "Low Table",
+        1: "Dining Table",
+        2: "Bar Table",
+    },
+    "cabinet": {
+        0: "Single Door",
+        1: "Double Door",
+        2: "Tall Cabinet",
+    },
 }
 
-SCALER_PATH = os.path.join("config", "preprocessing_params.pkl")
-MODEL_PATH = os.path.join("models", "trained_model.h5")
+SCALER_PATHS = {
+    "chair": os.path.join("config", "preprocessing_params.pkl"),
+    "table": os.path.join("config", "table_scaler.pkl"),
+    "cabinet": os.path.join("config", "cabinet_scaler.pkl"),
+}
+MODEL_PATHS = {
+    "chair": os.path.join("models", "trained_model.h5"),
+    "table": os.path.join("models", "table_model.h5"),
+    "cabinet": os.path.join("models", "cabinet_model.h5"),
+}
 BLENDER_API_URL = os.environ.get("BLENDER_API_URL", "http://127.0.0.1:5001/render")
 
 
@@ -46,17 +68,28 @@ def load_model(path: str) -> keras.Model:
     return keras.models.load_model(path)
 
 
-def load_artifacts() -> tuple[keras.Model, object]:
-    """Load model and scaler once at app startup."""
-    if not os.path.exists(SCALER_PATH):
+ARTIFACT_CACHE: dict[str, tuple[keras.Model, object]] = {}
+
+
+def load_artifacts(object_type: str) -> tuple[keras.Model, object]:
+    """Load model and scaler on demand for a given object type."""
+    if object_type in ARTIFACT_CACHE:
+        return ARTIFACT_CACHE[object_type]
+
+    scaler_path = SCALER_PATHS.get(object_type)
+    model_path = MODEL_PATHS.get(object_type)
+    if not scaler_path or not model_path:
+        raise ValueError(f"Unknown object_type: {object_type}")
+    if not os.path.exists(scaler_path):
         raise FileNotFoundError("Scaler not found. Please run preprocessing first.")
-    if not os.path.exists(MODEL_PATH):
+    if not os.path.exists(model_path):
         raise FileNotFoundError("Model not found. Please train the model first.")
 
-    print(f"Loading model: {MODEL_PATH}")
-    scaler = load_scaler(SCALER_PATH)
-    model = load_model(MODEL_PATH)
+    print(f"Loading model: {model_path}")
+    scaler = load_scaler(scaler_path)
+    model = load_model(model_path)
     print("Model loaded successfully.")
+    ARTIFACT_CACHE[object_type] = (model, scaler)
     return model, scaler
 
 
@@ -71,45 +104,85 @@ def check_blender_api(timeout: float = 1.2) -> tuple[bool, str | None]:
         return False, str(exc)
 
 
-FEATURE_COLUMNS = [
-    "seat_height",
-    "seat_width",
-    "seat_depth",
-    "leg_count",
-    "leg_thickness",
-    "has_backrest",
-    "backrest_height",
-    "style_variant",
-]
+FEATURE_COLUMNS = {
+    "chair": [
+        "seat_height",
+        "seat_width",
+        "seat_depth",
+        "leg_count",
+        "leg_thickness",
+        "has_backrest",
+        "backrest_height",
+        "style_variant",
+    ],
+    "table": [
+        "table_height",
+        "table_width",
+        "table_depth",
+        "leg_count",
+        "leg_thickness",
+        "has_apron",
+        "style_variant",
+    ],
+    "cabinet": [
+        "cabinet_height",
+        "cabinet_width",
+        "cabinet_depth",
+        "wall_thickness",
+        "door_type",
+        "door_count",
+        "style_variant",
+    ],
+}
 
 
-def build_input_array(values: dict) -> pd.DataFrame:
+def build_input_array(object_type: str, values: dict) -> pd.DataFrame:
     """Build a DataFrame with feature names to match scaler training."""
-    row = {
-        "seat_height": values["seat_height"],
-        "seat_width": values["seat_width"],
-        "seat_depth": values["seat_depth"],
-        "leg_count": values["leg_count"],
-        "leg_thickness": values["leg_size"],
-        "has_backrest": values["has_backrest"],
-        "backrest_height": values["backrest_height"],
-        "style_variant": values["style_variant"],
-    }
-    return pd.DataFrame([row], columns=FEATURE_COLUMNS)
+    if object_type == "table":
+        row = {
+            "table_height": values["table_height"],
+            "table_width": values["table_width"],
+            "table_depth": values["table_depth"],
+            "leg_count": values["table_leg_count"],
+            "leg_thickness": values["table_leg_thickness"],
+            "has_apron": values["table_has_apron"],
+            "style_variant": values["table_style_variant"],
+        }
+    elif object_type == "cabinet":
+        row = {
+            "cabinet_height": values["cabinet_height"],
+            "cabinet_width": values["cabinet_width"],
+            "cabinet_depth": values["cabinet_depth"],
+            "wall_thickness": values["wall_thickness"],
+            "door_type": values["door_type"],
+            "door_count": values["door_count"],
+            "style_variant": values["cabinet_style_variant"],
+        }
+    else:
+        row = {
+            "seat_height": values["seat_height"],
+            "seat_width": values["seat_width"],
+            "seat_depth": values["seat_depth"],
+            "leg_count": values["leg_count"],
+            "leg_thickness": values["leg_size"],
+            "has_backrest": values["has_backrest"],
+            "backrest_height": values["backrest_height"],
+            "style_variant": values["style_variant"],
+        }
+    return pd.DataFrame([row], columns=FEATURE_COLUMNS[object_type])
 
 
 app = Flask(__name__)
-
-MODEL, SCALER = load_artifacts()
 
 
 @app.route("/status", methods=["GET"])
 def status():
     blender_ok, blender_error = check_blender_api()
+    chair_ok = os.path.exists(SCALER_PATHS["chair"]) and os.path.exists(MODEL_PATHS["chair"])
     return jsonify(
         {
             "ui_ok": True,
-            "model_ok": True,
+            "model_ok": chair_ok,
             "blender_api_ok": blender_ok,
             "blender_api_url": BLENDER_API_URL,
             "blender_api_error": blender_error,
@@ -471,6 +544,10 @@ HTML_TEMPLATE = """
                 font-size: 11px;
             }
 
+            .hidden {
+                display: none;
+            }
+
             @keyframes fadeIn {
                 from { opacity: 0; transform: translateY(6px); }
                 to { opacity: 1; transform: translateY(0); }
@@ -492,8 +569,8 @@ HTML_TEMPLATE = """
         <div class="page">
             <div class="hero">
                 <div>
-                    <h1 class="title">Chair Classifier + Blender Preview</h1>
-                    <p class="subtitle">Introduceți parametrii geometrici ai scaunului și apăsați Predict.</p>
+                    <h1 class="title">Chair/Table/Cabinet Classifier + Blender Preview</h1>
+                    <p class="subtitle">Selectează obiectul, completează parametrii și apasă Predict.</p>
                 </div>
             </div>
 
@@ -504,16 +581,16 @@ HTML_TEMPLATE = """
                         <div class="grid">
                             <div>
                                 <label for="object_type">object_type</label>
-                                <select name="object_type" id="object_type" onchange="syncObjectType()">
-                                    <option value="chair" selected>chair</option>
-                                    <option value="table" disabled>table (coming soon)</option>
-                                    <option value="cabinet" disabled>cabinet (coming soon)</option>
+                                <select name="object_type" id="object_type" onchange="updateObjectTypeUI()">
+                                    <option value="chair" {% if values.object_type == "chair" %}selected{% endif %}>chair</option>
+                                    <option value="table" {% if values.object_type == "table" %}selected{% endif %}>table</option>
+                                    <option value="cabinet" {% if values.object_type == "cabinet" %}selected{% endif %}>cabinet</option>
                                 </select>
                             </div>
                         </div>
 
-                        <div class="section-title">Sezut</div>
-                        <div class="grid">
+                        <div class="section-title chair-only">Sezut</div>
+                        <div class="grid chair-only">
                         <div>
                             <label for="seat_height">seat_height</label>
                             <input type="number" step="0.01" min="0.4" max="0.8" name="seat_height" id="seat_height" value="{{ values.seat_height }}" required />
@@ -528,8 +605,8 @@ HTML_TEMPLATE = """
                         </div>
                         </div>
 
-                        <div class="section-title">Picioare</div>
-                        <div class="grid">
+                        <div class="section-title chair-only">Picioare</div>
+                        <div class="grid chair-only">
                             <div>
                                 <label for="leg_count">leg_count</label>
                                 <input type="number" step="1" min="3" max="5" name="leg_count" id="leg_count" value="{{ values.leg_count }}" required />
@@ -547,8 +624,8 @@ HTML_TEMPLATE = """
                             </div>
                         </div>
 
-                        <div class="section-title">Spatar</div>
-                        <div class="grid">
+                        <div class="section-title chair-only">Spatar</div>
+                        <div class="grid chair-only">
                             <div>
                                 <label for="has_backrest">has_backrest</label>
                                 <select name="has_backrest" id="has_backrest">
@@ -563,6 +640,76 @@ HTML_TEMPLATE = """
                             <div>
                                 <label for="style_variant">style_variant</label>
                                 <input type="number" step="1" min="0" max="2" name="style_variant" id="style_variant" value="{{ values.style_variant }}" required />
+                            </div>
+                        </div>
+
+                        <div class="section-title table-only">Masa</div>
+                        <div class="grid table-only">
+                            <div>
+                                <label for="table_height">table_height</label>
+                                <input type="number" step="0.01" min="0.35" max="0.9" name="table_height" id="table_height" value="{{ values.table_height }}" required />
+                            </div>
+                            <div>
+                                <label for="table_width">table_width</label>
+                                <input type="number" step="0.01" min="0.5" max="1.4" name="table_width" id="table_width" value="{{ values.table_width }}" required />
+                            </div>
+                            <div>
+                                <label for="table_depth">table_depth</label>
+                                <input type="number" step="0.01" min="0.5" max="1.0" name="table_depth" id="table_depth" value="{{ values.table_depth }}" required />
+                            </div>
+                            <div>
+                                <label for="table_leg_count">leg_count</label>
+                                <input type="number" step="1" min="3" max="4" name="table_leg_count" id="table_leg_count" value="{{ values.table_leg_count }}" required />
+                            </div>
+                            <div>
+                                <label for="table_leg_thickness">leg_thickness</label>
+                                <input type="number" step="0.01" min="0.04" max="0.09" name="table_leg_thickness" id="table_leg_thickness" value="{{ values.table_leg_thickness }}" required />
+                            </div>
+                            <div>
+                                <label for="table_has_apron">has_apron</label>
+                                <select name="table_has_apron" id="table_has_apron">
+                                    <option value="0" {% if values.table_has_apron == 0 %}selected{% endif %}>0</option>
+                                    <option value="1" {% if values.table_has_apron == 1 %}selected{% endif %}>1</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="table_style_variant">style_variant</label>
+                                <input type="number" step="1" min="0" max="2" name="table_style_variant" id="table_style_variant" value="{{ values.table_style_variant }}" required />
+                            </div>
+                        </div>
+
+                        <div class="section-title cabinet-only">Dulap</div>
+                        <div class="grid cabinet-only">
+                            <div>
+                                <label for="cabinet_height">cabinet_height</label>
+                                <input type="number" step="0.01" min="1.0" max="2.2" name="cabinet_height" id="cabinet_height" value="{{ values.cabinet_height }}" required />
+                            </div>
+                            <div>
+                                <label for="cabinet_width">cabinet_width</label>
+                                <input type="number" step="0.01" min="0.6" max="1.6" name="cabinet_width" id="cabinet_width" value="{{ values.cabinet_width }}" required />
+                            </div>
+                            <div>
+                                <label for="cabinet_depth">cabinet_depth</label>
+                                <input type="number" step="0.01" min="0.3" max="0.8" name="cabinet_depth" id="cabinet_depth" value="{{ values.cabinet_depth }}" required />
+                            </div>
+                            <div>
+                                <label for="wall_thickness">wall_thickness</label>
+                                <input type="number" step="0.001" min="0.015" max="0.05" name="wall_thickness" id="wall_thickness" value="{{ values.wall_thickness }}" required />
+                            </div>
+                            <div>
+                                <label for="door_type">door_type</label>
+                                <select name="door_type" id="door_type">
+                                    <option value="0" {% if values.door_type == 0 %}selected{% endif %}>flush_door</option>
+                                    <option value="1" {% if values.door_type == 1 %}selected{% endif %}>inset_door</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="door_count">door_count</label>
+                                <input type="number" step="1" min="1" max="2" name="door_count" id="door_count" value="{{ values.door_count }}" required />
+                            </div>
+                            <div>
+                                <label for="cabinet_style_variant">style_variant</label>
+                                <input type="number" step="1" min="0" max="2" name="cabinet_style_variant" id="cabinet_style_variant" value="{{ values.cabinet_style_variant }}" required />
                             </div>
                         </div>
 
@@ -655,6 +802,7 @@ HTML_TEMPLATE = """
         <script>
             const hasBackrest = document.getElementById('has_backrest');
             const backrestHeight = document.getElementById('backrest_height');
+            const objectTypeSelect = document.getElementById('object_type');
             const scrollTopButton = document.getElementById('scroll-top');
             const blenderDot = document.getElementById('status-blender-dot');
             const blenderMeta = document.getElementById('status-blender-meta');
@@ -675,6 +823,13 @@ HTML_TEMPLATE = """
             }
 
             function syncBackrest() {
+                if (!hasBackrest || !backrestHeight) {
+                    return;
+                }
+                if (objectTypeSelect && objectTypeSelect.value !== 'chair') {
+                    backrestHeight.setAttribute('readonly', 'readonly');
+                    return;
+                }
                 if (hasBackrest.value === '0') {
                     backrestHeight.value = '0.0';
                     backrestHeight.min = '0.0';
@@ -690,16 +845,51 @@ HTML_TEMPLATE = """
                 }
             }
 
-            hasBackrest.addEventListener('change', syncBackrest);
-            syncBackrest();
-
-            function syncObjectType() {
-                const objectType = document.getElementById('object_type');
-                if (!objectType || objectType.value !== 'chair') {
-                    alert('Doar scaunul este implementat momentan.');
-                    objectType.value = 'chair';
-                }
+            if (hasBackrest) {
+                hasBackrest.addEventListener('change', syncBackrest);
             }
+
+            function updateObjectTypeUI() {
+                const chairBlocks = document.querySelectorAll('.chair-only');
+                const tableBlocks = document.querySelectorAll('.table-only');
+                const cabinetBlocks = document.querySelectorAll('.cabinet-only');
+                const objectType = objectTypeSelect ? objectTypeSelect.value : 'chair';
+
+                chairBlocks.forEach((node) => node.classList.toggle('hidden', objectType !== 'chair'));
+                tableBlocks.forEach((node) => node.classList.toggle('hidden', objectType !== 'table'));
+                cabinetBlocks.forEach((node) => node.classList.toggle('hidden', objectType !== 'cabinet'));
+
+                const toggleInputs = (blocks, enabled) => {
+                    blocks.forEach((node) => {
+                        node.querySelectorAll('input, select').forEach((field) => {
+                            if (enabled) {
+                                field.removeAttribute('disabled');
+                                if (field.dataset.wasRequired === 'true') {
+                                    field.setAttribute('required', 'required');
+                                    delete field.dataset.wasRequired;
+                                }
+                            } else {
+                                field.setAttribute('disabled', 'disabled');
+                                if (field.hasAttribute('required')) {
+                                    field.dataset.wasRequired = 'true';
+                                    field.removeAttribute('required');
+                                }
+                            }
+                        });
+                    });
+                };
+
+                toggleInputs(chairBlocks, objectType === 'chair');
+                toggleInputs(tableBlocks, objectType === 'table');
+                toggleInputs(cabinetBlocks, objectType === 'cabinet');
+
+                syncBackrest();
+            }
+
+            if (objectTypeSelect) {
+                objectTypeSelect.addEventListener('change', updateObjectTypeUI);
+            }
+            updateObjectTypeUI();
 
             function copyScript() {
                 const script = document.getElementById('blender-script');
@@ -817,6 +1007,7 @@ def request_preview(payload: dict) -> tuple[str | None, str | None]:
 @app.route("/", methods=["GET", "POST"])
 def index():
         values = {
+                "object_type": "chair",
                 "seat_height": 0.55,
                 "seat_width": 0.45,
                 "seat_depth": 0.45,
@@ -826,36 +1017,142 @@ def index():
                 "has_backrest": 1,
                 "backrest_height": 0.25,
                 "style_variant": 0,
+            "table_height": 0.75,
+            "table_width": 1.0,
+            "table_depth": 0.7,
+            "table_leg_count": 4,
+            "table_leg_thickness": 0.06,
+            "table_has_apron": 1,
+            "table_style_variant": 0,
+            "cabinet_height": 1.8,
+            "cabinet_width": 1.0,
+            "cabinet_depth": 0.5,
+            "wall_thickness": 0.03,
+            "door_type": 0,
+            "door_count": 2,
+            "cabinet_style_variant": 0,
             "rotate_yaw": 35.0,
             "rotate_pitch": 15.0,
         }
 
         result = None
         if request.method == "POST":
-                values["seat_height"] = parse_float("seat_height", values["seat_height"])
-                values["seat_width"] = parse_float("seat_width", values["seat_width"])
-                values["seat_depth"] = parse_float("seat_depth", values["seat_depth"])
-                values["leg_count"] = parse_int("leg_count", values["leg_count"])
-                values["leg_shape"] = parse_str("leg_shape", values["leg_shape"])
-                values["leg_size"] = parse_float("leg_size", values["leg_size"])
-                values["has_backrest"] = parse_int("has_backrest", values["has_backrest"])
-                values["backrest_height"] = parse_float("backrest_height", values["backrest_height"])
-                values["style_variant"] = parse_int("style_variant", values["style_variant"])
-                values["rotate_yaw"] = parse_float("rotate_yaw", values["rotate_yaw"])
-                values["rotate_pitch"] = parse_float("rotate_pitch", values["rotate_pitch"])
+                values["object_type"] = parse_str("object_type", values["object_type"])
+                object_type = values["object_type"] if values["object_type"] in LABEL_MAPS else "chair"
+                values["object_type"] = object_type
 
-                if values["has_backrest"] == 0:
-                        values["backrest_height"] = 0.0
+                if object_type == "table":
+                    values["table_height"] = parse_float("table_height", values["table_height"])
+                    values["table_width"] = parse_float("table_width", values["table_width"])
+                    values["table_depth"] = parse_float("table_depth", values["table_depth"])
+                    values["table_leg_count"] = parse_int("table_leg_count", values["table_leg_count"])
+                    values["table_leg_thickness"] = parse_float("table_leg_thickness", values["table_leg_thickness"])
+                    values["table_has_apron"] = parse_int("table_has_apron", values["table_has_apron"])
+                    values["table_style_variant"] = parse_int("table_style_variant", values["table_style_variant"])
+
+                    model, scaler = load_artifacts("table")
+                    features = build_input_array("table", values)
+                    scaled_features = scaler.transform(features)
+                    probabilities = model.predict(scaled_features, verbose=0)[0]
+                    predicted_label = int(np.argmax(probabilities))
+                    confidence = float(np.max(probabilities))
+
+                    script = generate_table_script(
+                        table_height=values["table_height"],
+                        table_width=values["table_width"],
+                        table_depth=values["table_depth"],
+                        leg_count=values["table_leg_count"],
+                        leg_thickness=values["table_leg_thickness"],
+                        has_apron=values["table_has_apron"],
+                        style_variant=values["table_style_variant"],
+                    )
+
+                    preview_payload = {
+                        "object_type": "table",
+                        "table_height": values["table_height"],
+                        "table_width": values["table_width"],
+                        "table_depth": values["table_depth"],
+                        "leg_count": values["table_leg_count"],
+                        "leg_thickness": values["table_leg_thickness"],
+                        "has_apron": values["table_has_apron"],
+                        "style_variant": values["table_style_variant"],
+                        "rotate_yaw": values["rotate_yaw"],
+                        "rotate_pitch": values["rotate_pitch"],
+                    }
+                    preview_image, preview_error = request_preview(preview_payload)
+                    preview_src = None
+                    if preview_image:
+                        preview_src = f"data:image/png;base64,{preview_image}"
+                    label_map = LABEL_MAPS["table"]
+                elif object_type == "cabinet":
+                    values["cabinet_height"] = parse_float("cabinet_height", values["cabinet_height"])
+                    values["cabinet_width"] = parse_float("cabinet_width", values["cabinet_width"])
+                    values["cabinet_depth"] = parse_float("cabinet_depth", values["cabinet_depth"])
+                    values["wall_thickness"] = parse_float("wall_thickness", values["wall_thickness"])
+                    values["door_type"] = parse_int("door_type", values["door_type"])
+                    values["door_count"] = parse_int("door_count", values["door_count"])
+                    values["cabinet_style_variant"] = parse_int("cabinet_style_variant", values["cabinet_style_variant"])
+
+                    model, scaler = load_artifacts("cabinet")
+                    features = build_input_array("cabinet", values)
+                    scaled_features = scaler.transform(features)
+                    probabilities = model.predict(scaled_features, verbose=0)[0]
+                    predicted_label = int(np.argmax(probabilities))
+                    confidence = float(np.max(probabilities))
+
+                    script = generate_cabinet_script(
+                        cabinet_height=values["cabinet_height"],
+                        cabinet_width=values["cabinet_width"],
+                        cabinet_depth=values["cabinet_depth"],
+                        wall_thickness=values["wall_thickness"],
+                        door_type=values["door_type"],
+                        door_count=values["door_count"],
+                        style_variant=values["cabinet_style_variant"],
+                    )
+
+                    preview_payload = {
+                        "object_type": "cabinet",
+                        "cabinet_height": values["cabinet_height"],
+                        "cabinet_width": values["cabinet_width"],
+                        "cabinet_depth": values["cabinet_depth"],
+                        "wall_thickness": values["wall_thickness"],
+                        "door_type": values["door_type"],
+                        "door_count": values["door_count"],
+                        "style_variant": values["cabinet_style_variant"],
+                        "rotate_yaw": values["rotate_yaw"],
+                        "rotate_pitch": values["rotate_pitch"],
+                    }
+                    preview_image, preview_error = request_preview(preview_payload)
+                    preview_src = None
+                    if preview_image:
+                        preview_src = f"data:image/png;base64,{preview_image}"
+                    label_map = LABEL_MAPS["cabinet"]
                 else:
+                    values["seat_height"] = parse_float("seat_height", values["seat_height"])
+                    values["seat_width"] = parse_float("seat_width", values["seat_width"])
+                    values["seat_depth"] = parse_float("seat_depth", values["seat_depth"])
+                    values["leg_count"] = parse_int("leg_count", values["leg_count"])
+                    values["leg_shape"] = parse_str("leg_shape", values["leg_shape"])
+                    values["leg_size"] = parse_float("leg_size", values["leg_size"])
+                    values["has_backrest"] = parse_int("has_backrest", values["has_backrest"])
+                    values["backrest_height"] = parse_float("backrest_height", values["backrest_height"])
+                    values["style_variant"] = parse_int("style_variant", values["style_variant"])
+                    values["rotate_yaw"] = parse_float("rotate_yaw", values["rotate_yaw"])
+                    values["rotate_pitch"] = parse_float("rotate_pitch", values["rotate_pitch"])
+
+                    if values["has_backrest"] == 0:
+                        values["backrest_height"] = 0.0
+                    else:
                         values["backrest_height"] = max(0.2, min(0.5, values["backrest_height"]))
 
-                features = build_input_array(values)
-                scaled_features = SCALER.transform(features)
-                probabilities = MODEL.predict(scaled_features, verbose=0)[0]
-                predicted_label = int(np.argmax(probabilities))
-                confidence = float(np.max(probabilities))
+                    model, scaler = load_artifacts("chair")
+                    features = build_input_array("chair", values)
+                    scaled_features = scaler.transform(features)
+                    probabilities = model.predict(scaled_features, verbose=0)[0]
+                    predicted_label = int(np.argmax(probabilities))
+                    confidence = float(np.max(probabilities))
 
-                script = generate_chair_script(
+                    script = generate_chair_script(
                         seat_height=values["seat_height"],
                         seat_width=values["seat_width"],
                         seat_depth=values["seat_depth"],
@@ -865,30 +1162,33 @@ def index():
                         has_backrest=values["has_backrest"],
                         backrest_height=values["backrest_height"],
                         style_variant=values["style_variant"],
-                )
+                    )
 
-                preview_payload = {
-                    "seat_height": values["seat_height"],
-                    "seat_width": values["seat_width"],
-                    "seat_depth": values["seat_depth"],
-                    "leg_count": values["leg_count"],
-                    "leg_shape": values["leg_shape"],
-                    "leg_size": values["leg_size"],
-                    "has_backrest": values["has_backrest"],
-                    "backrest_height": values["backrest_height"],
-                    "style_variant": values["style_variant"],
-                    "rotate_yaw": values["rotate_yaw"],
-                    "rotate_pitch": values["rotate_pitch"],
-                }
-                preview_image, preview_error = request_preview(preview_payload)
-                preview_src = None
-                if preview_image:
-                    preview_src = f"data:image/png;base64,{preview_image}"
+                    preview_payload = {
+                        "object_type": "chair",
+                        "seat_height": values["seat_height"],
+                        "seat_width": values["seat_width"],
+                        "seat_depth": values["seat_depth"],
+                        "leg_count": values["leg_count"],
+                        "leg_shape": values["leg_shape"],
+                        "leg_size": values["leg_size"],
+                        "has_backrest": values["has_backrest"],
+                        "backrest_height": values["backrest_height"],
+                        "style_variant": values["style_variant"],
+                        "rotate_yaw": values["rotate_yaw"],
+                        "rotate_pitch": values["rotate_pitch"],
+                    }
+                    preview_image, preview_error = request_preview(preview_payload)
+                    preview_src = None
+                    if preview_image:
+                        preview_src = f"data:image/png;base64,{preview_image}"
+
+                    label_map = LABEL_MAPS["chair"]
 
                 result = {
-                        "label": LABEL_MAP[predicted_label],
+                        "label": label_map[predicted_label],
                         "confidence": confidence,
-                        "probabilities": {LABEL_MAP[idx]: float(prob) for idx, prob in enumerate(probabilities)},
+                        "probabilities": {label_map[idx]: float(prob) for idx, prob in enumerate(probabilities)},
                     "script": script,
                     "preview_src": preview_src,
                     "preview_error": preview_error,
