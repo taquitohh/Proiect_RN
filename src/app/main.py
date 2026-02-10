@@ -255,7 +255,7 @@ HTML_TEMPLATE = """
     <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Chair Type Classifier (Etapa 5.4)</title>
+        <title>RN Proiect</title>
         <style>
             :root {
                 --bg: #0e1116;
@@ -292,6 +292,7 @@ HTML_TEMPLATE = """
                 gap: 24px;
                 align-items: end;
                 margin-bottom: 24px;
+                position: relative;
             }
 
             .title {
@@ -484,25 +485,29 @@ HTML_TEMPLATE = """
 
             .copy-btn {
                 position: absolute;
-                top: 8px;
-                right: 8px;
+                top: 12px;
+                right: 12px;
                 background: rgba(15, 20, 27, 0.9);
                 border: 1px solid var(--border);
                 color: var(--ink);
-                padding: 6px 8px;
+                padding: 0;
                 border-radius: 10px;
                 box-shadow: var(--shadow);
-                display: inline-flex;
+                display: flex;
                 align-items: center;
                 justify-content: center;
-                width: 34px;
-                height: 30px;
+                width: 36px;
+                height: 32px;
+                line-height: 1;
+                font-size: 0;
+                z-index: 2;
             }
 
             .copy-btn svg {
                 width: 16px;
                 height: 16px;
                 fill: var(--ink);
+                display: block;
             }
 
             pre {
@@ -571,11 +576,11 @@ HTML_TEMPLATE = """
                 position: fixed;
                 right: 24px;
                 bottom: 24px;
-                width: 44px;
-                height: 44px;
+                width: 56px;
+                height: 56px;
                 border-radius: 50%;
-                border: 1px solid var(--border);
-                background: rgba(15, 20, 27, 0.9);
+                border: 2px solid rgba(79, 140, 122, 0.55);
+                background: rgba(22, 92, 72, 0.92);
                 color: var(--ink);
                 display: grid;
                 place-items: center;
@@ -586,6 +591,15 @@ HTML_TEMPLATE = """
                 transition: opacity 160ms ease, transform 160ms ease;
                 transform: translateY(6px);
                 z-index: 100;
+                font-size: 22px;
+                font-weight: 800;
+            }
+
+            .scroll-top svg {
+                width: 22px;
+                height: 22px;
+                fill: var(--ink);
+                display: block;
             }
 
             .scroll-top.show {
@@ -601,6 +615,104 @@ HTML_TEMPLATE = """
                 text-transform: uppercase;
                 letter-spacing: 0.08em;
                 font-size: 11px;
+            }
+
+            .footer {
+                margin-top: 24px;
+                text-align: center;
+                padding: 22px 20px;
+                background: linear-gradient(180deg, rgba(20, 24, 34, 0.98), rgba(16, 19, 28, 0.98));
+            }
+
+            .footer-line {
+                font-size: 15px;
+                color: var(--muted);
+            }
+
+            .footer-name {
+                color: var(--ink);
+                font-weight: 700;
+            }
+
+            .footer-meta {
+                margin-top: 8px;
+                font-size: 13px;
+                color: var(--muted);
+                letter-spacing: 0.02em;
+            }
+
+            .info-btn {
+                border: 1px solid var(--border);
+                background: rgba(15, 20, 27, 0.9);
+                color: var(--ink);
+                border-radius: 999px;
+                padding: 0 14px;
+                height: 38px;
+                font-size: 18px;
+                cursor: pointer;
+                box-shadow: var(--shadow);
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                line-height: 1;
+                position: absolute;
+                right: 0;
+                top: 0;
+            }
+
+            .hero-head {
+                display: flex;
+                align-items: center;
+                gap: 14px;
+                width: 100%;
+            }
+
+            .info-btn .info-label {
+                font-size: 11px;
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+            }
+
+            .info-overlay {
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.65);
+                backdrop-filter: blur(3px);
+                display: none;
+                align-items: center;
+                justify-content: center;
+                z-index: 999;
+            }
+
+            .info-overlay.show {
+                display: flex;
+            }
+
+            .info-modal {
+                background: var(--paper);
+                border-radius: 20px;
+                width: min(900px, 92vw);
+                max-height: 85vh;
+                overflow-y: auto;
+                padding: 28px;
+                box-shadow: var(--shadow);
+                border: 1px solid var(--border);
+            }
+
+            .info-modal h2 {
+                margin-top: 0;
+            }
+
+            .info-close {
+                position: sticky;
+                top: 0;
+                float: right;
+                background: none;
+                border: none;
+                color: var(--ink);
+                font-size: 22px;
+                cursor: pointer;
             }
 
             .hidden {
@@ -628,8 +740,14 @@ HTML_TEMPLATE = """
         <div class="page">
             <div class="hero">
                 <div>
-                    <h1 class="title">Chair/Table/Cabinet/Fridge/Stove Classifier + Blender Preview</h1>
-                    <p class="subtitle">Selectează obiectul, completează parametrii și apasă Predict.</p>
+                    <div class="hero-head">
+                        <h1 class="title">Kitchen Furniture Classifier</h1>
+                        <button class="info-btn" onclick="openInfo()" aria-label="Info">
+                            <span class="info-icon">ℹ️</span>
+                            <span class="info-label">Info</span>
+                        </button>
+                    </div>
+                    <p class="subtitle">Alege tipul de obiect de bucatarie, introdu parametrii, apoi genereaza predictia si scriptul Blender.</p>
                 </div>
             </div>
 
@@ -936,10 +1054,128 @@ HTML_TEMPLATE = """
             </div>
 
             <button class="scroll-top" type="button" id="scroll-top" aria-label="Scroll to top">
-                ↑
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path d="M12 4l7 7-1.41 1.41L13 7.83V20h-2V7.83L6.41 12.41 5 11z" />
+                </svg>
             </button>
 
+            <footer class="card footer">
+                <div class="footer-line">Design & Development de <span class="footer-name">Denisa Elena Caldararu</span></div>
+                <div class="footer-meta">© 2025-2026 • Built with Flask, TensorFlow/Keras, Blender API</div>
+            </footer>
+
+            <div class="info-overlay" id="infoOverlay" onclick="closeInfo(event)">
+                <div class="info-modal">
+                    <button class="info-close" onclick="closeInfo()" aria-label="Close">✕</button>
+
+                    <h2>Despre proiect</h2>
+
+                    <p>
+                        Acest proiect demonstreaza un <strong>pipeline complet de inteligenta artificiala</strong>
+                        care porneste de la date numerice, trece printr-o retea neuronala antrenata
+                        si se finalizeaza cu generare procedurala de obiecte 3D in Blender.
+                    </p>
+
+                    <h3>Scopul proiectului</h3>
+                    <p>
+                        Scopul este clasificarea si interpretarea unor <strong>obiecte de mobilier</strong>
+                        (scaune, mese, dulapuri) pe baza parametrilor geometrici,
+                        urmata de generarea automata a unui model 3D corespunzator.
+                    </p>
+
+                    <h3>Logica retelei neuronale (RN)</h3>
+                    <p>
+                        Reteaua neuronala utilizata este o <strong>retea feed-forward (MLP)</strong>,
+                        antrenata pe date tabulare numerice.
+                        RN-ul <em>nu genereaza geometrie</em>, ci invata sa recunoasca
+                        <strong>tipul obiectului / varianta constructiva</strong>
+                        pe baza relatiilor dintre dimensiuni.
+                    </p>
+
+                    <ul>
+                        <li>Intrare: dimensiuni si parametri (ex: inaltime, latime, grosimi, optiuni)</li>
+                        <li>Iesire: clasa discreta (ex: scaun simplu, masa joasa, dulap cu doua usi)</li>
+                    </ul>
+
+                    <p>
+                        Deciziile RN-ului sunt apoi folosite pentru a selecta
+                        <strong>reguli deterministe de generare Blender</strong>.
+                    </p>
+
+                    <h3>Generarea setului de date</h3>
+                    <p>
+                        Seturile de date sunt <strong>sintetice</strong> si sunt generate programatic,
+                        folosind intervale realiste si reguli logice.
+                    </p>
+
+                    <ul>
+                        <li>Intervalele sunt alese din ergonomie si design real</li>
+                        <li>Reguli logice elimina combinatii imposibile (ex: spatar fara inaltime)</li>
+                        <li>Etichetele sunt atribuite determinist, nu manual</li>
+                    </ul>
+
+                    <p>
+                        Aceasta abordare permite:
+                    </p>
+                    <ul>
+                        <li>control total asupra distributiei datelor</li>
+                        <li>reproductibilitate</li>
+                        <li>explicabilitate clara a deciziilor RN</li>
+                    </ul>
+
+                    <h3>Legatura RN → Blender</h3>
+                    <p>
+                        RN-ul nu „deseneaza”.
+                        El decide <strong>ce este obiectul</strong>.
+                        Scripturile Blender folosesc parametrii initiali + clasa prezisa
+                        pentru a construi un model 3D coerent si realist.
+                    </p>
+
+                    <h3>Design si arhitectura</h3>
+                    <ul>
+                        <li>RN separata pentru fiecare tip de obiect</li>
+                        <li>Pipeline clar: generate → clean → scale → split → train → infer</li>
+                        <li>UI decupleaza complet logica RN de logica Blender</li>
+                    </ul>
+
+                    <h3>Context si lucrari similare</h3>
+                    <p>
+                        Proiectul se inspira din concepte utilizate in:
+                    </p>
+                    <ul>
+                        <li>procedural modeling (Blender, Houdini)</li>
+                        <li>design parametric asistat de AI</li>
+                        <li>mass customization si generative design</li>
+                    </ul>
+
+                    <p>
+                        Diferenta majora este integrarea completa:
+                        <strong>RN explicabil → generare 3D determinista</strong>.
+                    </p>
+                </div>
+            </div>
+
         <script>
+            function openInfo() {
+                const overlay = document.getElementById('infoOverlay');
+                if (!overlay) {
+                    return;
+                }
+                overlay.classList.add('show');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeInfo(event) {
+                const overlay = document.getElementById('infoOverlay');
+                if (!overlay) {
+                    return;
+                }
+                if (!event || event.target.id === 'infoOverlay') {
+                    overlay.classList.remove('show');
+                    document.body.style.overflow = '';
+                }
+            }
+
             const hasBackrest = document.getElementById('has_backrest');
             const backrestHeight = document.getElementById('backrest_height');
             const objectTypeSelect = document.getElementById('object_type');
