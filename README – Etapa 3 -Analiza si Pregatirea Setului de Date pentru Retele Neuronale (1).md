@@ -2,7 +2,7 @@
 
 **Disciplina:** Rețele Neuronale  
 **Instituție:** POLITEHNICA București – FIIR  
-**Student:** Caldararu Denisa  
+**Student:** Caldararu Denisa Elena  
 **Data:** 10.10.2025  
 
 ---
@@ -10,6 +10,8 @@
 ## Introducere
 
 Acest document descrie activitățile realizate în **Etapa 3**, în care se analizează și se preprocesează setul de date necesar proiectului „Rețele Neuronale". Scopul etapei este pregătirea corectă a datelor pentru instruirea modelului RN, respectând bunele practici privind calitatea, consistența și reproductibilitatea datelor.
+
+In aceasta etapa lucram doar pe varianta **chair**, o varianta de element pentru generare , relativ simpla; (table, cabinet, fridge, etc) sunt ca plan de viitor, daca se reuseste cu **chair**.
 
 ---
 
@@ -72,19 +74,24 @@ project-name/
 
 ### 3.1 Statistici descriptive aplicate
 
-* **Medie, mediană, deviație standard** (raportare sintetică pentru verificarea plajelor)
-* **Min–max** pentru fiecare caracteristică
-* **Distribuții pe caracteristici** (verificare logică a intervalelor)
+* **Medie, mediană, deviație standard** pentru a confirma ca valorile sunt in plajele asteptate.
+* **Min–max** pentru fiecare caracteristica, ca verificare rapida a limitelor.
+* **Distribuții pe caracteristici** pentru a observa daca apar concentrari sau valori in afara intervalelor.
 
-### 3.2 Analiza calității datelor
+Exemple de verificare:
+* seat_height trebuie sa ramana in 0.40–0.80 (min/max confirmate).
+* leg_count trebuie sa fie doar 3, 4 sau 5 (fara alte valori).
+* backrest_height are 0.00 cand has_backrest = 0 si 0.20–0.50 cand has_backrest = 1.
 
-* **Detectarea valorilor lipsă** (nu s-au găsit valori lipsă)
-* **Detectarea valorilor inconsistente** (ex: `backrest_height > 0` când `has_backrest = 0`)
+### 3.2 Analiza calitatii datelor
+
+* **Detectarea valorilor lipsa:** nu au aparut valori lipsa in setul generat.
+* **Detectarea valorilor inconsistente:** s-a verificat logica intre atribute (ex: `backrest_height > 0` cand `has_backrest = 0`).
 
 ### 3.3 Probleme identificate
 
-* Nu s-au identificat valori lipsă.
-* Nu s-au identificat inconsistențe după validarea regulilor deterministe.
+* Nu s-au observat valori lipsa in verificarile de baza; setul este sintetic si generat determinist.
+* Nu s-au observat inconsistente raportate de regulile definite, in limitele verificarilor aplicate.
 
 ---
 
@@ -108,6 +115,12 @@ project-name/
 * 70–80% – train
 * 10–15% – validation
 * 10–15% – test
+
+**Împărțire folosita (chair, etapa curenta):**
+* Train: 10,500 (70%)
+* Validation: 2,250 (15%)
+* Test: 2,250 (15%)
+* Total: 15,000 observatii
 
 **Principii respectate:**
 * Stratificare pentru clasificare
