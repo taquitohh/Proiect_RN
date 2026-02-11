@@ -22,7 +22,7 @@
 | Contributie Date Originale | >=40% | 100% | 100% | n/a | ✓ |
 | Nr. Experimente Optimizare | >=4 | 4 | 4 | n/a | ✓ |
 
-### Declaratie de Originalitate & Politica de Utilizare AI
+### Declaratie de Originalitate & Politica de Utilizare AI 
 
 **Acest proiect reflecta munca, gandirea si deciziile mele proprii.**
 
@@ -31,7 +31,7 @@ Utilizarea asistentilor de inteligenta artificiala (ChatGPT, Claude, Grok, GitHu
 **Nu este permis** sa preiau:
 - cod, arhitectura RN sau solutie luata aproape integral de la un asistent AI fara modificari si rationamente proprii semnificative,
 - dataset-uri publice fara contributie proprie substantiala (minimum 40% din observatiile finale – conform cerintei obligatorii Etapa 4),
-- continut esential care nu poarta amprenta clara a propriei mele intelegeri.
+- continut esential care nu poarta amprenta clara a propriei mele intelegeri .
 
 **Confirmare explicita (bifez doar ce este adevarat):**
 
