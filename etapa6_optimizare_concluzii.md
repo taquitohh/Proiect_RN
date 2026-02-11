@@ -1,4 +1,4 @@
-# README – Etapa 6: Analiza Performanței, Optimizarea și Concluzii Finale
+# Etapa 6: Analiza Performanței, Optimizarea și Concluzii Finale
 
 **Disciplina:** Rețele Neuronale  
 **Instituție:** POLITEHNICA București – FIIR  
@@ -191,7 +191,7 @@ Motivație: Predicțiile cu confidence <0.6 sunt trimise pentru review uman,
 
 ### 2.1 Confusion Matrix și Interpretare
 
-**Locație:** `docs/confusion_matrix.png`
+**Locație:** `docs/confusion_matrix_optimized.png`
 
 **Notă multi-obiect:** Confusion matrix și analiza cauzală de mai jos sunt detaliate pentru chair.
 Pentru celelalte tipuri (`table/cabinet/fridge/stove`), metodologia de analiză este aceeași (confuzii dominante, cauze probabile, soluții),
@@ -266,7 +266,7 @@ Descrieți strategia folosită pentru optimizare:
 
 Nu s-au generat grafice separate in `docs/optimization/`. Sunt disponibile:
 - `docs/loss_curve.png` (curba loss/val_loss)
-- `docs/confusion_matrix.png`
+- `docs/confusion_matrix_optimized.png`
 
 ### 3.3 Raport Final Optimizare
 
@@ -314,7 +314,7 @@ Nu s-au generat grafice separate in `docs/optimization/`. Sunt disponibile:
 
 Disponibile in `docs/`:
 
-- [x] `confusion_matrix.png` - Confusion matrix model final
+- [x] `confusion_matrix_optimized.png` - Confusion matrix model final
 - [x] `loss_curve.png` - Loss si val_loss vs epoci
 
 ---
@@ -444,17 +444,20 @@ După primirea feedback-ului de la evaluatori, voi:
 **Structură reală în proiect:**
 
 ```
-Proiect_RN/
-├── README – Etapa 3 -Analiza si Pregatirea Setului de Date pentru Retele Neuronale.md
-├── README_Etapa4_Arhitectura_SIA_03.12.2025.md
-├── README_Etapa5_Antrenare_RN.md
-├── README_Etape6_Analiza_Performantei_Optimizare_Concluzii.md
+Proiect-RN-Denisa-Elena-Caldararu/
+├── README.md
+├── etapa3_analiza_date.md
+├── etapa4_arhitectura_sia.md
+├── etapa5_antrenare_model.md
+├── etapa6_optimizare_concluzii.md
 ├── ORDERINE_RULARE.txt
 ├── docs/
 │   ├── state_machine.png
 │   ├── loss_curve.png
-│   ├── confusion_matrix.png
-│   └── screenshots/
+│   ├── confusion_matrix_optimized.png
+│   ├── screenshots/
+│   ├── results/
+│   └── optimization/
 ├── data/
 │   ├── README.md
 │   ├── cabinets/
@@ -473,6 +476,7 @@ Proiect_RN/
 │   ├── preprocessing/
 │   ├── neural_network/
 │   │   ├── model.py
+│   │   ├── train.py
 │   │   ├── train_chair.py
 │   │   ├── train_table.py
 │   │   ├── train_cabinet.py
@@ -480,11 +484,13 @@ Proiect_RN/
 │   │   ├── train_stove.py
 │   │   ├── evaluate.py
 │   │   ├── compare_architectures.py
+│   │   ├── optimize.py
 │   │   └── export_onnx.py
 │   └── app/
 │       └── main.py
 ├── models/
 │   ├── untrained_model.h5
+│   ├── trained_model.h5
 │   ├── chair_model.h5
 │   ├── chair_model.onnx
 │   ├── table_model.h5
@@ -492,15 +498,17 @@ Proiect_RN/
 │   ├── fridge_model.h5
 │   └── stove_model.h5
 ├── results/
-│   ├── chair_training_history.csv
-│   ├── chair_test_metrics.json
-│   ├── table_training_history.csv
-│   ├── table_training_metrics.json
+│   ├── training_history.csv
+│   ├── test_metrics.json
+│   ├── hyperparameters.yaml
 │   ├── cabinet_training_history.csv
 │   ├── cabinet_training_metrics.json
 │   ├── fridge_training_history.csv
 │   ├── fridge_training_metrics.json
-│   └── stove_training_metrics.json
+│   ├── stove_training_history.csv
+│   ├── stove_training_metrics.json
+│   ├── table_training_history.csv
+│   └── table_training_metrics.json
 ├── config/
 │   ├── chair_scaler.pkl
 │   ├── table_scaler.pkl
@@ -535,7 +543,7 @@ python src/neural_network/evaluate.py
 # Output așteptat:
 # Test Accuracy: 0.9911
 # Test F1-score (macro): 0.9915
-# Confusion matrix salvată în docs/confusion_matrix.png
+# Confusion matrix salvată în docs/confusion_matrix_optimized.png
 ```
 
 **Notă:** Scriptul `evaluate.py` este documentat pe chair (fișiere în `data/chairs/test/`). Pentru celelalte tipuri,
@@ -575,7 +583,7 @@ python src/neural_network/export_onnx.py
 - [x] Metrici finale: **Accuracy ≥70%**, **F1 ≥0.65**
 
 ### Analiză Performanță
-- [x] Confusion matrix generată în `docs/confusion_matrix.png`
+- [x] Confusion matrix generată în `docs/confusion_matrix_optimized.png`
 - [x] Analiză interpretare confusion matrix completată în README
 - [x] Minimum 5 exemple greșite analizate detaliat
 - [x] Implicații industriale documentate
@@ -607,7 +615,7 @@ python src/neural_network/export_onnx.py
 - [x] `docs/state_machine.*` actualizat pentru a reflecta versiunea finală
 
 ### Pre-Predare
-- [x] `README_Etape6_Analiza_Performantei_Optimizare_Concluzii.md` completat cu TOATE secțiunile
+- [x] `etapa6_optimizare_concluzii.md` completat cu TOATE secțiunile
 - [x] Structură repository conformă modelului de mai sus
 - [x] Commit: `"Etapa 6 completă – Accuracy=0.9911, F1=0.9915"`
 - [x] Tag: `git tag -a v0.6-final -m "Etapa 6 - Concluzii"`
@@ -620,7 +628,7 @@ python src/neural_network/export_onnx.py
 
 Asigurați-vă că următoarele fișiere există și sunt completate:
 
-1. **`README_Etape6_Analiza_Performantei_Optimizare_Concluzii.md`** (acest fișier) cu:
+1. **`etapa6_optimizare_concluzii.md`** (acest fișier) cu:
    - Tabel experimente optimizare (minimum 4)
    - Tabel modificări aplicație software
    - Analiză confusion matrix
@@ -635,7 +643,7 @@ Asigurați-vă că următoarele fișiere există și sunt completate:
 
    (În repository există și metrici de antrenare pentru celelalte tipuri în `results/*_training_metrics.json`.)
 
-4. **`docs/confusion_matrix.png`** - confusion matrix model final
+4. **`docs/confusion_matrix_optimized.png`** - confusion matrix model final
 
 5. **`models/chair_model.onnx`** - export ONNX + benchmark
 

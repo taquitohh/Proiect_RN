@@ -3,7 +3,7 @@
 Scriptul incarca modelul si setul de test, ruleaza inferenta,
 calculeaza Accuracy si F1 macro, afiseaza metricile si le salveaza
 in results/chair_test_metrics.json. Optional salveaza matricea de confuzie
-in docs/confusion_matrix.png daca matplotlib este disponibil.
+in docs/confusion_matrix_optimized.png daca matplotlib este disponibil.
 """
 
 from __future__ import annotations
@@ -21,7 +21,7 @@ import tensorflow as tf
 DATA_DIR = Path("data") / "chairs"
 MODEL_PATH = Path("models") / "chair_model.h5"
 RESULTS_PATH = Path("results") / "chair_test_metrics.json"
-CONFUSION_PATH = Path("docs") / "confusion_matrix.png"
+CONFUSION_PATH = Path("docs") / "confusion_matrix_optimized.png"
 
 
 def load_test_data() -> Tuple[pd.DataFrame, pd.Series]:

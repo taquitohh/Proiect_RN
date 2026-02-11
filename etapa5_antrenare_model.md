@@ -178,7 +178,7 @@ Implementare in proiect:
 |----------------|--------------|
 | Comparare 2+ arhitecturi diferite | Tabel comparativ + justificare alegere finală în README |
 | Export ONNX/TFLite + benchmark latență | Fișier `models/chair_model.onnx` + demonstrație <50ms |
-| Confusion Matrix + analiză 5 exemple greșite | `docs/confusion_matrix.png` + analiză în README |
+| Confusion Matrix + analiză 5 exemple greșite | `docs/confusion_matrix_optimized.png` + analiză în README |
 
 **Resurse bonus:**
 - Export ONNX din PyTorch: [PyTorch ONNX Tutorial](https://pytorch.org/tutorials/beginner/onnx/export_simple_model_to_onnx_tutorial.html)
@@ -296,13 +296,13 @@ Structura reala din proiect este:
 ```
 Proiect_RN/
 ├── README – Etapa 3 -Analiza si Pregatirea Setului de Date pentru Retele Neuronale.md
-├── README_Etapa4_Arhitectura_SIA_03.12.2025.md
-├── README_Etapa5_Antrenare_RN.md
-├── README_Etape6_Analiza_Performantei_Optimizare_Concluzii.md
+├── etapa4_arhitectura_sia.md
+├── etapa5_antrenare_model.md
+├── etapa6_optimizare_concluzii.md
 ├── ORDERINE_RULARE.txt
 ├── docs/
 │   ├── state_machine.png
-│   ├── confusion_matrix.png
+│   ├── confusion_matrix_optimized.png
 │   ├── loss_curve.png
 │   └── screenshots/
 ├── data/
@@ -404,7 +404,7 @@ python src/neural_network/evaluate.py
 # Test Accuracy: 0.9911
 # Test F1-score (macro): 0.9915
 # ✓ Metrics saved to results/chair_test_metrics.json
-# ✓ Confusion matrix salvată în docs/confusion_matrix.png
+# ✓ Confusion matrix salvată în docs/confusion_matrix_optimized.png
 ```
 
 ### 5. Lansare UI cu model antrenat
@@ -459,7 +459,7 @@ python src/app/main.py
 - [x] Metrici Nivel 2: **Accuracy ≥75%**, **F1 ≥0.70**
 
 ### Documentație Nivel 3 Bonus (dacă aplicabil)
-- [x] Confusion matrix generată în `docs/confusion_matrix.png`
+- [x] Confusion matrix generată în `docs/confusion_matrix_optimized.png`
 - [x] Comparație 2+ arhitecturi (tabel comparativ + justificare)
 - [x] Export ONNX/TFLite + benchmark latență (<50ms demonstrat)
 - [x] Confusion matrix + analiză 5 exemple greșite cu implicații
@@ -515,7 +515,7 @@ Exemplu:
 
 6. **(Nivel 2)** `docs/loss_curve.png` - grafic loss vs val_loss
 
-7. **(Nivel 3)** `docs/confusion_matrix.png` + analiză în README
+7. **(Nivel 3)** `docs/confusion_matrix_optimized.png` + analiză în README
 
 ---
 
