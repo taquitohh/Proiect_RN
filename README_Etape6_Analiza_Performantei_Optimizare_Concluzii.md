@@ -609,7 +609,7 @@ python src/neural_network/export_onnx.py
 ### Pre-Predare
 - [x] `README_Etape6_Analiza_Performantei_Optimizare_Concluzii.md` completat cu TOATE secțiunile
 - [x] Structură repository conformă modelului de mai sus
-- [ ] Commit: `"Etapa 6 completă – Accuracy=0.9911, F1=0.9915"`
+- [x] Commit: `"Etapa 6 completă – Accuracy=0.9911, F1=0.9915"`
 - [x] Tag: `git tag -a v0.6-final -m "Etapa 6 - Concluzii"`
 - [x] Push: `git push origin main --tags`
 - [x] Repository accesibil (public sau privat cu acces profesori)
