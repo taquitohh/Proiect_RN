@@ -1408,315 +1408,312 @@ def request_preview(payload: dict) -> tuple[str | None, str | None]:
 @app.route("/", methods=["GET", "POST"])
 def index():
     # Valori default pentru primul render si fallback-uri.
-        values = {
+    values = {
+        "object_type": "chair",
+        "seat_height": 0.55,
+        "seat_width": 0.45,
+        "seat_depth": 0.45,
+        "leg_count": 4,
+        "leg_shape": "square",
+        "leg_size": 0.05,
+        "has_backrest": 1,
+        "backrest_height": 0.25,
+        "style_variant": 0,
+        "table_height": 0.75,
+        "table_width": 1.0,
+        "table_depth": 0.7,
+        "table_leg_count": 4,
+        "table_leg_thickness": 0.06,
+        "table_has_apron": 1,
+        "table_style_variant": 0,
+        "cabinet_height": 1.8,
+        "cabinet_width": 1.0,
+        "cabinet_depth": 0.5,
+        "wall_thickness": 0.03,
+        "door_type": 0,
+        "door_count": 2,
+        "cabinet_style_variant": 0,
+        "fridge_height": 1.8,
+        "fridge_width": 0.8,
+        "fridge_depth": 0.65,
+        "door_thickness": 0.03,
+        "fridge_handle_length": 0.3,
+        "freezer_ratio": 0.35,
+        "freezer_position": 0,
+        "fridge_style_variant": 0,
+        "stove_height": 0.9,
+        "stove_width": 0.7,
+        "stove_depth": 0.65,
+        "oven_height_ratio": 0.5,
+        "stove_handle_length": 0.5,
+        "glass_thickness": 0.02,
+        "burner_count": 4,
+        "knob_count": 6,
+        "stove_style_variant": 0,
+        "rotate_yaw": 35.0,
+        "rotate_pitch": 15.0,
+    }
+
+    # Payload final pentru randarea template-ului.
+    result = None
+    if request.method == "POST":
+        # Stabileste tipul obiectului pentru a sti ce campuri se parseaza.
+        values["object_type"] = parse_str("object_type", values["object_type"])
+        object_type = values["object_type"] if values["object_type"] in LABEL_MAPS else "chair"
+        values["object_type"] = object_type
+
+        if object_type == "table":
+            # Parseaza inputurile table, ruleaza inferenta si genereaza script Blender.
+            values["table_height"] = parse_float("table_height", values["table_height"])
+            values["table_width"] = parse_float("table_width", values["table_width"])
+            values["table_depth"] = parse_float("table_depth", values["table_depth"])
+            values["table_leg_count"] = parse_int("table_leg_count", values["table_leg_count"])
+            values["table_leg_thickness"] = parse_float("table_leg_thickness", values["table_leg_thickness"])
+            values["table_has_apron"] = parse_int("table_has_apron", values["table_has_apron"])
+            values["table_style_variant"] = parse_int("table_style_variant", values["table_style_variant"])
+            values["rotate_yaw"] = parse_float("rotate_yaw", values["rotate_yaw"])
+            values["rotate_pitch"] = parse_float("rotate_pitch", values["rotate_pitch"])
+
+            model, scaler = load_artifacts("table")
+            features = build_input_array("table", values)
+            scaled_features = scaler.transform(features)
+            probabilities = model.predict(scaled_features, verbose=0)[0]
+            predicted_label = int(np.argmax(probabilities))
+            confidence = float(np.max(probabilities))
+
+            script = generate_table_script(
+                table_height=values["table_height"],
+                table_width=values["table_width"],
+                table_depth=values["table_depth"],
+                leg_count=values["table_leg_count"],
+                leg_thickness=values["table_leg_thickness"],
+                has_apron=values["table_has_apron"],
+                style_variant=values["table_style_variant"],
+            )
+
+            preview_payload = {
+                "object_type": "table",
+                "table_height": values["table_height"],
+                "table_width": values["table_width"],
+                "table_depth": values["table_depth"],
+                "leg_count": values["table_leg_count"],
+                "leg_thickness": values["table_leg_thickness"],
+                "has_apron": values["table_has_apron"],
+                "style_variant": values["table_style_variant"],
+                "rotate_yaw": values["rotate_yaw"],
+                "rotate_pitch": values["rotate_pitch"],
+            }
+            preview_image, preview_error = request_preview(preview_payload)
+            preview_src = f"data:image/png;base64,{preview_image}" if preview_image else None
+            label_map = LABEL_MAPS["table"]
+        elif object_type == "cabinet":
+            # Parseaza inputurile cabinet, ruleaza inferenta si genereaza script Blender.
+            values["cabinet_height"] = parse_float("cabinet_height", values["cabinet_height"])
+            values["cabinet_width"] = parse_float("cabinet_width", values["cabinet_width"])
+            values["cabinet_depth"] = parse_float("cabinet_depth", values["cabinet_depth"])
+            values["wall_thickness"] = parse_float("wall_thickness", values["wall_thickness"])
+            values["door_type"] = parse_int("door_type", values["door_type"])
+            values["door_count"] = parse_int("door_count", values["door_count"])
+            values["cabinet_style_variant"] = parse_int("cabinet_style_variant", values["cabinet_style_variant"])
+            values["rotate_yaw"] = parse_float("rotate_yaw", values["rotate_yaw"])
+            values["rotate_pitch"] = parse_float("rotate_pitch", values["rotate_pitch"])
+
+            model, scaler = load_artifacts("cabinet")
+            features = build_input_array("cabinet", values)
+            scaled_features = scaler.transform(features)
+            probabilities = model.predict(scaled_features, verbose=0)[0]
+            predicted_label = int(np.argmax(probabilities))
+            confidence = float(np.max(probabilities))
+
+            script = generate_cabinet_script(
+                cabinet_height=values["cabinet_height"],
+                cabinet_width=values["cabinet_width"],
+                cabinet_depth=values["cabinet_depth"],
+                wall_thickness=values["wall_thickness"],
+                door_type=values["door_type"],
+                door_count=values["door_count"],
+                style_variant=values["cabinet_style_variant"],
+            )
+
+            preview_payload = {
+                "object_type": "cabinet",
+                "cabinet_height": values["cabinet_height"],
+                "cabinet_width": values["cabinet_width"],
+                "cabinet_depth": values["cabinet_depth"],
+                "wall_thickness": values["wall_thickness"],
+                "door_type": values["door_type"],
+                "door_count": values["door_count"],
+                "style_variant": values["cabinet_style_variant"],
+                "rotate_yaw": values["rotate_yaw"],
+                "rotate_pitch": values["rotate_pitch"],
+            }
+            preview_image, preview_error = request_preview(preview_payload)
+            preview_src = f"data:image/png;base64,{preview_image}" if preview_image else None
+            label_map = LABEL_MAPS["cabinet"]
+        elif object_type == "fridge":
+            # Parseaza inputurile fridge, ruleaza inferenta si genereaza script Blender.
+            values["fridge_height"] = parse_float("fridge_height", values["fridge_height"])
+            values["fridge_width"] = parse_float("fridge_width", values["fridge_width"])
+            values["fridge_depth"] = parse_float("fridge_depth", values["fridge_depth"])
+            values["door_thickness"] = parse_float("door_thickness", values["door_thickness"])
+            values["fridge_handle_length"] = parse_float("fridge_handle_length", values["fridge_handle_length"])
+            values["freezer_ratio"] = parse_float("freezer_ratio", values["freezer_ratio"])
+            values["freezer_position"] = parse_int("freezer_position", values["freezer_position"])
+            values["fridge_style_variant"] = parse_int("fridge_style_variant", values["fridge_style_variant"])
+            values["rotate_yaw"] = parse_float("rotate_yaw", values["rotate_yaw"])
+            values["rotate_pitch"] = parse_float("rotate_pitch", values["rotate_pitch"])
+
+            model, scaler = load_artifacts("fridge")
+            features = build_input_array("fridge", values)
+            scaled_features = scaler.transform(features)
+            probabilities = model.predict(scaled_features, verbose=0)[0]
+            predicted_label = int(np.argmax(probabilities))
+            confidence = float(np.max(probabilities))
+
+            script = generate_fridge_script(
+                fridge_height=values["fridge_height"],
+                fridge_width=values["fridge_width"],
+                fridge_depth=values["fridge_depth"],
+                door_thickness=values["door_thickness"],
+                handle_length=values["fridge_handle_length"],
+                freezer_ratio=values["freezer_ratio"],
+                freezer_position=values["freezer_position"],
+                style_variant=values["fridge_style_variant"],
+            )
+
+            preview_payload = {
+                "object_type": "fridge",
+                "fridge_height": values["fridge_height"],
+                "fridge_width": values["fridge_width"],
+                "fridge_depth": values["fridge_depth"],
+                "door_thickness": values["door_thickness"],
+                "handle_length": values["fridge_handle_length"],
+                "freezer_ratio": values["freezer_ratio"],
+                "freezer_position": values["freezer_position"],
+                "style_variant": values["fridge_style_variant"],
+                "rotate_yaw": values["rotate_yaw"],
+                "rotate_pitch": values["rotate_pitch"],
+            }
+            preview_image, preview_error = request_preview(preview_payload)
+            preview_src = f"data:image/png;base64,{preview_image}" if preview_image else None
+            label_map = LABEL_MAPS["fridge"]
+        elif object_type == "stove":
+            # Parseaza inputurile stove, ruleaza inferenta si genereaza script Blender.
+            values["stove_height"] = parse_float("stove_height", values["stove_height"])
+            values["stove_width"] = parse_float("stove_width", values["stove_width"])
+            values["stove_depth"] = parse_float("stove_depth", values["stove_depth"])
+            values["oven_height_ratio"] = parse_float("oven_height_ratio", values["oven_height_ratio"])
+            values["stove_handle_length"] = parse_float("stove_handle_length", values["stove_handle_length"])
+            values["glass_thickness"] = parse_float("glass_thickness", values["glass_thickness"])
+            values["burner_count"] = parse_int("burner_count", values["burner_count"])
+            values["knob_count"] = parse_int("knob_count", values["knob_count"])
+            values["stove_style_variant"] = parse_int("stove_style_variant", values["stove_style_variant"])
+            values["rotate_yaw"] = parse_float("rotate_yaw", values["rotate_yaw"])
+            values["rotate_pitch"] = parse_float("rotate_pitch", values["rotate_pitch"])
+
+            model, scaler = load_artifacts("stove")
+            features = build_input_array("stove", values)
+            scaled_features = scaler.transform(features)
+            probabilities = model.predict(scaled_features, verbose=0)[0]
+            predicted_label = int(np.argmax(probabilities))
+            confidence = float(np.max(probabilities))
+
+            script = generate_stove_script(
+                stove_height=values["stove_height"],
+                stove_width=values["stove_width"],
+                stove_depth=values["stove_depth"],
+                oven_height_ratio=values["oven_height_ratio"],
+                handle_length=values["stove_handle_length"],
+                glass_thickness=values["glass_thickness"],
+                style_variant=values["stove_style_variant"],
+            )
+
+            preview_payload = {
+                "object_type": "stove",
+                "stove_height": values["stove_height"],
+                "stove_width": values["stove_width"],
+                "stove_depth": values["stove_depth"],
+                "oven_height_ratio": values["oven_height_ratio"],
+                "handle_length": values["stove_handle_length"],
+                "glass_thickness": values["glass_thickness"],
+                "style_variant": values["stove_style_variant"],
+                "rotate_yaw": values["rotate_yaw"],
+                "rotate_pitch": values["rotate_pitch"],
+            }
+            preview_image, preview_error = request_preview(preview_payload)
+            preview_src = f"data:image/png;base64,{preview_image}" if preview_image else None
+            label_map = LABEL_MAPS["stove"]
+        else:
+            # Parseaza inputurile chair, ruleaza inferenta si genereaza script Blender.
+            values["seat_height"] = parse_float("seat_height", values["seat_height"])
+            values["seat_width"] = parse_float("seat_width", values["seat_width"])
+            values["seat_depth"] = parse_float("seat_depth", values["seat_depth"])
+            values["leg_count"] = parse_int("leg_count", values["leg_count"])
+            values["leg_shape"] = parse_str("leg_shape", values["leg_shape"])
+            values["leg_size"] = parse_float("leg_size", values["leg_size"])
+            values["has_backrest"] = parse_int("has_backrest", values["has_backrest"])
+            values["backrest_height"] = parse_float("backrest_height", values["backrest_height"])
+            values["style_variant"] = parse_int("style_variant", values["style_variant"])
+            values["rotate_yaw"] = parse_float("rotate_yaw", values["rotate_yaw"])
+            values["rotate_pitch"] = parse_float("rotate_pitch", values["rotate_pitch"])
+
+            if values["has_backrest"] == 0:
+                values["backrest_height"] = 0.0
+            else:
+                values["backrest_height"] = max(0.2, min(0.5, values["backrest_height"]))
+
+            model, scaler = load_artifacts("chair")
+            features = build_input_array("chair", values)
+            scaled_features = scaler.transform(features)
+            probabilities = model.predict(scaled_features, verbose=0)[0]
+            predicted_label = int(np.argmax(probabilities))
+            confidence = float(np.max(probabilities))
+
+            script = generate_chair_script(
+                seat_height=values["seat_height"],
+                seat_width=values["seat_width"],
+                seat_depth=values["seat_depth"],
+                leg_count=values["leg_count"],
+                leg_shape=values["leg_shape"],
+                leg_size=values["leg_size"],
+                has_backrest=values["has_backrest"],
+                backrest_height=values["backrest_height"],
+                style_variant=values["style_variant"],
+            )
+
+            preview_payload = {
                 "object_type": "chair",
-                "seat_height": 0.55,
-                "seat_width": 0.45,
-                "seat_depth": 0.45,
-                "leg_count": 4,
-            "leg_shape": "square",
-            "leg_size": 0.05,
-                "has_backrest": 1,
-                "backrest_height": 0.25,
-                "style_variant": 0,
-            "table_height": 0.75,
-            "table_width": 1.0,
-            "table_depth": 0.7,
-            "table_leg_count": 4,
-            "table_leg_thickness": 0.06,
-            "table_has_apron": 1,
-            "table_style_variant": 0,
-            "cabinet_height": 1.8,
-            "cabinet_width": 1.0,
-            "cabinet_depth": 0.5,
-            "wall_thickness": 0.03,
-            "door_type": 0,
-            "door_count": 2,
-            "cabinet_style_variant": 0,
-            "fridge_height": 1.8,
-            "fridge_width": 0.8,
-            "fridge_depth": 0.65,
-            "door_thickness": 0.03,
-            "fridge_handle_length": 0.3,
-            "freezer_ratio": 0.35,
-            "freezer_position": 0,
-            "fridge_style_variant": 0,
-            "stove_height": 0.9,
-            "stove_width": 0.7,
-            "stove_depth": 0.65,
-            "oven_height_ratio": 0.5,
-            "stove_handle_length": 0.5,
-            "glass_thickness": 0.02,
-            "burner_count": 4,
-            "knob_count": 6,
-            "stove_style_variant": 0,
-            "rotate_yaw": 35.0,
-            "rotate_pitch": 15.0,
+                "seat_height": values["seat_height"],
+                "seat_width": values["seat_width"],
+                "seat_depth": values["seat_depth"],
+                "leg_count": values["leg_count"],
+                "leg_shape": values["leg_shape"],
+                "leg_size": values["leg_size"],
+                "has_backrest": values["has_backrest"],
+                "backrest_height": values["backrest_height"],
+                "style_variant": values["style_variant"],
+                "rotate_yaw": values["rotate_yaw"],
+                "rotate_pitch": values["rotate_pitch"],
+            }
+            preview_image, preview_error = request_preview(preview_payload)
+            preview_src = f"data:image/png;base64,{preview_image}" if preview_image else None
+            label_map = LABEL_MAPS["chair"]
+
+        result = {
+            "label": label_map[predicted_label],
+            "confidence": confidence,
+            "probabilities": {label_map[idx]: float(prob) for idx, prob in enumerate(probabilities)},
+            "script": script,
+            "preview_src": preview_src,
+            "preview_error": preview_error,
         }
 
-        # Payload final pentru randarea template-ului.
-        result = None
-        if request.method == "POST":
-                # Stabileste tipul obiectului pentru a sti ce campuri se parseaza.
-            values["object_type"] = parse_str("object_type", values["object_type"])
-                object_type = values["object_type"] if values["object_type"] in LABEL_MAPS else "chair"
-                values["object_type"] = object_type
-
-                if object_type == "table":
-                    # Parseaza inputurile table, ruleaza inferenta si genereaza script Blender.
-                    values["table_height"] = parse_float("table_height", values["table_height"])
-                    values["table_width"] = parse_float("table_width", values["table_width"])
-                    values["table_depth"] = parse_float("table_depth", values["table_depth"])
-                    values["table_leg_count"] = parse_int("table_leg_count", values["table_leg_count"])
-                    values["table_leg_thickness"] = parse_float("table_leg_thickness", values["table_leg_thickness"])
-                    values["table_has_apron"] = parse_int("table_has_apron", values["table_has_apron"])
-                    values["table_style_variant"] = parse_int("table_style_variant", values["table_style_variant"])
-
-                    model, scaler = load_artifacts("table")
-                    features = build_input_array("table", values)
-                    scaled_features = scaler.transform(features)
-                    probabilities = model.predict(scaled_features, verbose=0)[0]
-                    predicted_label = int(np.argmax(probabilities))
-                    confidence = float(np.max(probabilities))
-
-                    script = generate_table_script(
-                        table_height=values["table_height"],
-                        table_width=values["table_width"],
-                        table_depth=values["table_depth"],
-                        leg_count=values["table_leg_count"],
-                        leg_thickness=values["table_leg_thickness"],
-                        has_apron=values["table_has_apron"],
-                        style_variant=values["table_style_variant"],
-                    )
-
-                    preview_payload = {
-                        "object_type": "table",
-                        "table_height": values["table_height"],
-                        "table_width": values["table_width"],
-                        "table_depth": values["table_depth"],
-                        "leg_count": values["table_leg_count"],
-                        "leg_thickness": values["table_leg_thickness"],
-                        "has_apron": values["table_has_apron"],
-                        "style_variant": values["table_style_variant"],
-                        "rotate_yaw": values["rotate_yaw"],
-                        "rotate_pitch": values["rotate_pitch"],
-                    }
-                    preview_image, preview_error = request_preview(preview_payload)
-                    preview_src = None
-                    if preview_image:
-                        preview_src = f"data:image/png;base64,{preview_image}"
-                    label_map = LABEL_MAPS["table"]
-                elif object_type == "cabinet":
-                    # Parseaza inputurile cabinet, ruleaza inferenta si genereaza script Blender.
-                    values["cabinet_height"] = parse_float("cabinet_height", values["cabinet_height"])
-                    values["cabinet_width"] = parse_float("cabinet_width", values["cabinet_width"])
-                    values["cabinet_depth"] = parse_float("cabinet_depth", values["cabinet_depth"])
-                    values["wall_thickness"] = parse_float("wall_thickness", values["wall_thickness"])
-                    values["door_type"] = parse_int("door_type", values["door_type"])
-                    values["door_count"] = parse_int("door_count", values["door_count"])
-                    values["cabinet_style_variant"] = parse_int("cabinet_style_variant", values["cabinet_style_variant"])
-
-                    model, scaler = load_artifacts("cabinet")
-                    features = build_input_array("cabinet", values)
-                    scaled_features = scaler.transform(features)
-                    probabilities = model.predict(scaled_features, verbose=0)[0]
-                    predicted_label = int(np.argmax(probabilities))
-                    confidence = float(np.max(probabilities))
-
-                    script = generate_cabinet_script(
-                        cabinet_height=values["cabinet_height"],
-                        cabinet_width=values["cabinet_width"],
-                        cabinet_depth=values["cabinet_depth"],
-                        wall_thickness=values["wall_thickness"],
-                        door_type=values["door_type"],
-                        door_count=values["door_count"],
-                        style_variant=values["cabinet_style_variant"],
-                    )
-
-                    preview_payload = {
-                        "object_type": "cabinet",
-                        "cabinet_height": values["cabinet_height"],
-                        "cabinet_width": values["cabinet_width"],
-                        "cabinet_depth": values["cabinet_depth"],
-                        "wall_thickness": values["wall_thickness"],
-                        "door_type": values["door_type"],
-                        "door_count": values["door_count"],
-                        "style_variant": values["cabinet_style_variant"],
-                        "rotate_yaw": values["rotate_yaw"],
-                        "rotate_pitch": values["rotate_pitch"],
-                    }
-                    preview_image, preview_error = request_preview(preview_payload)
-                    preview_src = None
-                    if preview_image:
-                        preview_src = f"data:image/png;base64,{preview_image}"
-                    label_map = LABEL_MAPS["cabinet"]
-                elif object_type == "fridge":
-                    # Parseaza inputurile fridge, ruleaza inferenta si genereaza script Blender.
-                    values["fridge_height"] = parse_float("fridge_height", values["fridge_height"])
-                    values["fridge_width"] = parse_float("fridge_width", values["fridge_width"])
-                    values["fridge_depth"] = parse_float("fridge_depth", values["fridge_depth"])
-                    values["door_thickness"] = parse_float("door_thickness", values["door_thickness"])
-                    values["fridge_handle_length"] = parse_float("fridge_handle_length", values["fridge_handle_length"])
-                    values["freezer_ratio"] = parse_float("freezer_ratio", values["freezer_ratio"])
-                    values["freezer_position"] = parse_int("freezer_position", values["freezer_position"])
-                    values["fridge_style_variant"] = parse_int("fridge_style_variant", values["fridge_style_variant"])
-
-                    model, scaler = load_artifacts("fridge")
-                    features = build_input_array("fridge", values)
-                    scaled_features = scaler.transform(features)
-                    probabilities = model.predict(scaled_features, verbose=0)[0]
-                    predicted_label = int(np.argmax(probabilities))
-                    confidence = float(np.max(probabilities))
-
-                    script = generate_fridge_script(
-                        fridge_height=values["fridge_height"],
-                        fridge_width=values["fridge_width"],
-                        fridge_depth=values["fridge_depth"],
-                        door_thickness=values["door_thickness"],
-                        handle_length=values["fridge_handle_length"],
-                        freezer_ratio=values["freezer_ratio"],
-                        freezer_position=values["freezer_position"],
-                        style_variant=values["fridge_style_variant"],
-                    )
-
-                    preview_payload = {
-                        "object_type": "fridge",
-                        "fridge_height": values["fridge_height"],
-                        "fridge_width": values["fridge_width"],
-                        "fridge_depth": values["fridge_depth"],
-                        "door_thickness": values["door_thickness"],
-                        "handle_length": values["fridge_handle_length"],
-                        "freezer_ratio": values["freezer_ratio"],
-                        "freezer_position": values["freezer_position"],
-                        "style_variant": values["fridge_style_variant"],
-                        "rotate_yaw": values["rotate_yaw"],
-                        "rotate_pitch": values["rotate_pitch"],
-                    }
-                    preview_image, preview_error = request_preview(preview_payload)
-                    preview_src = None
-                    if preview_image:
-                        preview_src = f"data:image/png;base64,{preview_image}"
-                    label_map = LABEL_MAPS["fridge"]
-                elif object_type == "stove":
-                    # Parseaza inputurile stove, ruleaza inferenta si genereaza script Blender.
-                    values["stove_height"] = parse_float("stove_height", values["stove_height"])
-                    values["stove_width"] = parse_float("stove_width", values["stove_width"])
-                    values["stove_depth"] = parse_float("stove_depth", values["stove_depth"])
-                    values["oven_height_ratio"] = parse_float("oven_height_ratio", values["oven_height_ratio"])
-                    values["stove_handle_length"] = parse_float("stove_handle_length", values["stove_handle_length"])
-                    values["glass_thickness"] = parse_float("glass_thickness", values["glass_thickness"])
-                    values["burner_count"] = parse_int("burner_count", values["burner_count"])
-                    values["knob_count"] = parse_int("knob_count", values["knob_count"])
-                    values["stove_style_variant"] = parse_int("stove_style_variant", values["stove_style_variant"])
-
-                    model, scaler = load_artifacts("stove")
-                    features = build_input_array("stove", values)
-                    scaled_features = scaler.transform(features)
-                    probabilities = model.predict(scaled_features, verbose=0)[0]
-                    predicted_label = int(np.argmax(probabilities))
-                    confidence = float(np.max(probabilities))
-
-                    script = generate_stove_script(
-                        stove_height=values["stove_height"],
-                        stove_width=values["stove_width"],
-                        stove_depth=values["stove_depth"],
-                        oven_height_ratio=values["oven_height_ratio"],
-                        handle_length=values["stove_handle_length"],
-                        glass_thickness=values["glass_thickness"],
-                        style_variant=values["stove_style_variant"],
-                    )
-
-                    preview_payload = {
-                        "object_type": "stove",
-                        "stove_height": values["stove_height"],
-                        "stove_width": values["stove_width"],
-                        "stove_depth": values["stove_depth"],
-                        "oven_height_ratio": values["oven_height_ratio"],
-                        "handle_length": values["stove_handle_length"],
-                        "glass_thickness": values["glass_thickness"],
-                        "style_variant": values["stove_style_variant"],
-                        "rotate_yaw": values["rotate_yaw"],
-                        "rotate_pitch": values["rotate_pitch"],
-                    }
-                    preview_image, preview_error = request_preview(preview_payload)
-                    preview_src = None
-                    if preview_image:
-                        preview_src = f"data:image/png;base64,{preview_image}"
-                    label_map = LABEL_MAPS["stove"]
-                else:
-                    # Parseaza inputurile chair, ruleaza inferenta si genereaza script Blender.
-                    values["seat_height"] = parse_float("seat_height", values["seat_height"])
-                    values["seat_width"] = parse_float("seat_width", values["seat_width"])
-                    values["seat_depth"] = parse_float("seat_depth", values["seat_depth"])
-                    values["leg_count"] = parse_int("leg_count", values["leg_count"])
-                    values["leg_shape"] = parse_str("leg_shape", values["leg_shape"])
-                    values["leg_size"] = parse_float("leg_size", values["leg_size"])
-                    values["has_backrest"] = parse_int("has_backrest", values["has_backrest"])
-                    values["backrest_height"] = parse_float("backrest_height", values["backrest_height"])
-                    values["style_variant"] = parse_int("style_variant", values["style_variant"])
-                    values["rotate_yaw"] = parse_float("rotate_yaw", values["rotate_yaw"])
-                    values["rotate_pitch"] = parse_float("rotate_pitch", values["rotate_pitch"])
-
-                    if values["has_backrest"] == 0:
-                        values["backrest_height"] = 0.0
-                    else:
-                        values["backrest_height"] = max(0.2, min(0.5, values["backrest_height"]))
-
-                    model, scaler = load_artifacts("chair")
-                    features = build_input_array("chair", values)
-                    scaled_features = scaler.transform(features)
-                    probabilities = model.predict(scaled_features, verbose=0)[0]
-                    predicted_label = int(np.argmax(probabilities))
-                    confidence = float(np.max(probabilities))
-
-                    script = generate_chair_script(
-                        seat_height=values["seat_height"],
-                        seat_width=values["seat_width"],
-                        seat_depth=values["seat_depth"],
-                        leg_count=values["leg_count"],
-                        leg_shape=values["leg_shape"],
-                        leg_size=values["leg_size"],
-                        has_backrest=values["has_backrest"],
-                        backrest_height=values["backrest_height"],
-                        style_variant=values["style_variant"],
-                    )
-
-                    preview_payload = {
-                        "object_type": "chair",
-                        "seat_height": values["seat_height"],
-                        "seat_width": values["seat_width"],
-                        "seat_depth": values["seat_depth"],
-                        "leg_count": values["leg_count"],
-                        "leg_shape": values["leg_shape"],
-                        "leg_size": values["leg_size"],
-                        "has_backrest": values["has_backrest"],
-                        "backrest_height": values["backrest_height"],
-                        "style_variant": values["style_variant"],
-                        "rotate_yaw": values["rotate_yaw"],
-                        "rotate_pitch": values["rotate_pitch"],
-                    }
-                    preview_image, preview_error = request_preview(preview_payload)
-                    preview_src = None
-                    if preview_image:
-                        preview_src = f"data:image/png;base64,{preview_image}"
-
-                    label_map = LABEL_MAPS["chair"]
-
-                result = {
-                        "label": label_map[predicted_label],
-                        "confidence": confidence,
-                        "probabilities": {label_map[idx]: float(prob) for idx, prob in enumerate(probabilities)},
-                    "script": script,
-                    "preview_src": preview_src,
-                    "preview_error": preview_error,
-                }
-
-        return render_template_string(
-            HTML_TEMPLATE,
-            values=values,
-            result=result,
-            blender_api_url=BLENDER_API_URL,
-        )
+    return render_template_string(
+        HTML_TEMPLATE,
+        values=values,
+        result=result,
+        blender_api_url=BLENDER_API_URL,
+    )
 
 
 if __name__ == "__main__":

@@ -17,6 +17,13 @@ Această etapă corespunde punctelor **7. Analiza performanței și optimizarea 
 iar varianta `baseline_32_16` a rămas cea mai eficientă. Modelul utilizat în aplicație
 este `models/chair_model.h5`, iar exportul ONNX este disponibil în `models/chair_model.onnx`.
 
+**Extindere multi-obiect (în aplicație):** Pe lângă `chair` (exemplul principal din această documentație),
+aplicația a fost extinsă să suporte și `table`, `cabinet`, `fridge`, `stove`. Pentru toate tipurile,
+pipeline-ul RN este identic la nivel de aplicație (încărcare model + scaler → scalare input → inferență → afișare),
+implementat unitar în `src/app/main.py` prin încărcarea artefactelor per tip (`models/<object>_model.h5` și
+`config/<object>_scaler.pkl`). Diferențele apar la nivel de date: fiecare obiect are propria schemă de features,
+propriile clase/etichete și propriile fișiere în `data/<object>/`.
+
 **CONTEXT IMPORTANT:** 
 - Etapa 6 **ÎNCHEIE ciclul formal de dezvoltare** al proiectului
 - Aceasta este **ULTIMA VERSIUNE înainte de examen** pentru care se oferă **FEEDBACK**
@@ -72,6 +79,10 @@ Deși Etapa 6 încheie ciclul formal de dezvoltare, **procesul iterativ continu�
 - [x] **Screenshot inferență** în `docs/screenshots/inference_real.png`
 - [x] **State Machine** implementat conform definiției din Etapa 4
 
+**Notă:** În repository există și artefacte pentru `table`, `cabinet`, `fridge`, `stove` (modele + scalere + pipeline UI).
+În această etapă, chair rămâne exemplul principal pentru metrici și analiza detaliată, iar celelalte obiecte urmează aceeași
+structură de pipeline, cu diferențe la date și clase.
+
 **Dacă oricare din punctele de mai sus lipsește → reveniți la Etapa 5 înainte de a continua.**
 
 ---
@@ -94,6 +105,10 @@ Completați **TOATE** punctele următoare:
    - Screenshot demonstrativ în `docs/screenshots/inference_optimized.png` 
 8. **Concluzii tehnice** (minimum 1 pagină): performanță, limitări, lecții învățate
 
+**Clarificare multi-obiect:** Punctele (6) și (7) sunt exemplificate pe chair. În aplicația finală există și modele finale per tip
+(`models/table_model.h5`, `models/cabinet_model.h5`, `models/fridge_model.h5`, `models/stove_model.h5`), iar UI folosește aceeași
+secvență de inferență pentru fiecare tip. Diferențele țin de schema de input și numărul/definiția claselor.
+
 #### Tabel Experimente de Optimizare
 
 Documentați **minimum 4 experimente** cu variații sistematice:
@@ -105,6 +120,11 @@ Documentați **minimum 4 experimente** cu variații sistematice:
 | Exp 2 | Arhitectură mai largă: 64-32 | 0.9893 | 0.9894 | 6.76s | Cea mai bună dintre experimente, dar sub baseline |
 | Exp 3 | Arhitectură mai adâncă: 64-32-16 | 0.9862 | 0.9865 | 7.07s | Performanță bună, cost mai mare |
 | Exp 4 | Arhitectură baseline: 32-16 (10 epoci, ES+RLRP) | 0.9858 | 0.9849 | 6.98s | Stabil, dar sub baseline Etapa 5 |
+
+**Notă multi-obiect:** Experimentele și comparația de arhitecturi sunt documentate în detaliu pentru chair.
+Pentru `table/cabinet/fridge/stove`, s-a păstrat același tip de pipeline (MLP tabular + scalare) și aceeași structură de rulare,
+dar cu dataset-uri diferite (features și clase diferite). Pentru aceste obiecte, sunt disponibile artefacte de antrenare în `results/*_training_history.csv`
+și `results/*_training_metrics.json`.
 
 **Justificare alegere configurație finală:**
 ```
@@ -132,6 +152,9 @@ Modelul final ramas in productie este chair_model.h5 (MLP 32-16).
 | **UI - afișare rezultate** | text + probabilități + script | Neschimbat | UI deja integra model antrenat corect |
 | **Logging** | n/a | Neschimbat | Nu s-a introdus logging suplimentar |
 
+**Extindere multi-obiect:** UI folosește aceeași logică de inferență pentru `chair/table/cabinet/fridge/stove`, încărcând modelul și scaler-ul aferent tipului selectat
+din `models/` și `config/`. Diferențele sunt la schema de input (features) și la clasele prezise.
+
 **Completați pentru proiectul vostru:**
 ```markdown
 ### Modificări concrete aduse în Etapa 6:
@@ -140,6 +163,7 @@ Modelul final ramas in productie este chair_model.h5 (MLP 32-16).
 2. **State Machine actualizat:** neschimbat fata de Etapa 5.
 3. **UI îmbunătățit:** neschimbat (foloseste modelul antrenat).
 4. **Pipeline end-to-end re-testat:** confirmat prin evaluare pe test set.
+5. **Suport multi-obiect:** pipeline-ul RN este același și pentru `table/cabinet/fridge/stove`, cu modele + scalere separate per tip.
 ```
 
 ### Diagrama State Machine Actualizată (dacă s-au făcut modificări)
@@ -168,6 +192,10 @@ Motivație: Predicțiile cu confidence <0.6 sunt trimise pentru review uman,
 ### 2.1 Confusion Matrix și Interpretare
 
 **Locație:** `docs/confusion_matrix.png`
+
+**Notă multi-obiect:** Confusion matrix și analiza cauzală de mai jos sunt detaliate pentru chair.
+Pentru celelalte tipuri (`table/cabinet/fridge/stove`), metodologia de analiză este aceeași (confuzii dominante, cauze probabile, soluții),
+însă confuziile și explicațiile diferă deoarece fiecare obiect are alte features și alte clase.
 
 **Analiză:**
 ```
@@ -446,6 +474,10 @@ Proiect_RN/
 │   ├── neural_network/
 │   │   ├── model.py
 │   │   ├── train_chair.py
+│   │   ├── train_table.py
+│   │   ├── train_cabinet.py
+│   │   ├── train_fridge.py
+│   │   ├── train_stove.py
 │   │   ├── evaluate.py
 │   │   ├── compare_architectures.py
 │   │   └── export_onnx.py
@@ -505,6 +537,9 @@ python src/neural_network/evaluate.py
 # Test F1-score (macro): 0.9915
 # Confusion matrix salvată în docs/confusion_matrix.png
 ```
+
+**Notă:** Scriptul `evaluate.py` este documentat pe chair (fișiere în `data/chairs/test/`). Pentru celelalte tipuri,
+artefactele de antrenare și metricile de train/val sunt salvate în `results/*_training_history.csv` și `results/*_training_metrics.json`.
 
 ### 3. Verificare UI cu model antrenat
 
@@ -594,7 +629,11 @@ Asigurați-vă că următoarele fișiere există și sunt completate:
 
 2. **`models/chair_model.h5`** - model final utilizat in aplicatie
 
+   (În aplicația multi-obiect există și: `models/table_model.h5`, `models/cabinet_model.h5`, `models/fridge_model.h5`, `models/stove_model.h5`.)
+
 3. **`results/chair_test_metrics.json`** - metrici finale
+
+   (În repository există și metrici de antrenare pentru celelalte tipuri în `results/*_training_metrics.json`.)
 
 4. **`docs/confusion_matrix.png`** - confusion matrix model final
 
