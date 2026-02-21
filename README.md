@@ -444,7 +444,6 @@ python src/neural_network/evaluate.py
 
 1. Lipsa masurarii formale a latentei end-to-end.
 2. Confuzii rare intre bar_chair si chair_simple la proportii apropiate.
-3. Nu exista un demo video end-to-end in repo.
 
 ### 10.3 Lectii Invatate (Top 5)
 
